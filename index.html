@@ -328,6 +328,93 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 .rub .vg{width:16px;height:16px}
 
 
+.tags{margin-top:10px}
+.tags .tr{display:grid;grid-template-columns:minmax(0,1fr) 124px;gap:14px;
+  align-items:baseline;padding:2px 0}
+.tags .tl{font-size:var(--t-md);line-height:1.5}
+.tv{border-left:3px solid var(--press);padding-left:9px;font-size:14px;line-height:1.3;
+  color:var(--newsprint);display:inline-block}
+.tv.inf{border-left-style:double;border-left-width:4px}
+.tv.not{border-left-style:dotted}
+.tv.act{border-left-style:dashed}
+.tv.unc{border-left:0;padding-left:12px;font-style:italic}
+.lgd{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:8px}
+
+
+.tm{display:grid;grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr) 26px minmax(0,1fr);
+  gap:12px;align-items:center}
+.tm .tn{border:1px solid rgba(18,22,19,.28);padding:11px 14px}
+.tm .tnr{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--newsprint)}
+.tm .tnt{font-size:var(--t-md);line-height:1.3;margin-top:4px}
+.tm .tar{width:26px;height:12px;justify-self:center}
+.tm .tar path{fill:none;stroke:var(--newsprint);stroke-width:1.2;stroke-linecap:round;
+  stroke-linejoin:round}
+
+
+.fit{--tw:296px;margin-top:14px;display:grid;gap:11px}
+.fit .fr{display:grid;grid-template-columns:112px minmax(0,1fr);gap:12px;align-items:center}
+.fit .fl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--newsprint);line-height:1.2;white-space:nowrap}
+
+.fit .fw{position:relative;width:min(var(--win),100%);height:17px}
+
+.fit .fw::after{content:"";position:absolute;inset:0;border:1.5px solid var(--press);
+  box-shadow:inset 0 0 0 2px var(--bone);pointer-events:none}
+.fit .fw > i{display:block;height:100%;width:0;background:var(--newsprint);
+  transition:width .8s var(--ease) .35s}
+.on .fit .fw > i{width:var(--tw)}
+
+
+.path{margin-top:16px;display:grid;gap:9px}
+.path .pl{display:grid;grid-template-columns:56px minmax(0,1fr);gap:14px;align-items:center}
+.path .pn{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--newsprint)}
+.path .steps{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.path .sp{border:1px solid rgba(18,22,19,.32);padding:5px 11px;font-size:var(--t-md);
+  line-height:1.2}
+
+.path .ar,.rw .rar{flex:none}
+.path .ar{width:16px;height:10px}
+.rw .rar{width:22px;height:12px;justify-self:center}
+.path .ar path,.rw .rar path{fill:none;stroke:var(--newsprint);stroke-width:1.2;
+  stroke-linecap:round;stroke-linejoin:round}
+.path .dead .sp{border-style:dashed;color:var(--newsprint)}
+
+
+.rw{margin-top:20px;display:grid;grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr);
+  gap:14px;align-items:center}
+.rw .pr{border:1px solid rgba(18,22,19,.28);padding:12px 15px;font-size:19px;line-height:1.4}
+.rw .pr s{text-decoration-line:line-through;text-decoration-thickness:2px;
+  text-decoration-color:var(--risk);color:var(--newsprint)}
+.rw .rar{text-align:center;color:var(--newsprint);font-size:19px}
+
+
+.cmp{margin-top:14px}
+.cmp .ch,.cmp .cr{display:grid;grid-template-columns:minmax(0,148px) 132px 74px minmax(0,142px);
+  gap:16px;align-items:center}
+.cmp .ch{padding:0 0 5px 15px}
+.cmp .ch span{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--newsprint);line-height:1.2}
+.cmp .cr{padding:6px 0 6px 15px;margin-top:5px}
+.cmp .vn{display:flex;align-items:center;gap:9px;font-size:var(--t-md);font-weight:500}
+.cmp .cc{font-size:var(--t-md);line-height:1.25;color:var(--newsprint)}
+
+
+.chk{margin-top:12px}
+.chk .ci{display:grid;grid-template-columns:20px minmax(0,1fr) 44px;gap:14px;
+  align-items:start;padding:9px 0;border-top:1px solid rgba(18,22,19,.14)}
+.chk .ci:first-child{border-top:0;padding-top:2px}
+.chk .cb{width:15px;height:15px;margin-top:5px}
+.chk .cb rect{fill:none;stroke:var(--press);stroke-width:1.5}
+.chk .ct{font-size:20px;line-height:1.35}
+.chk .tg{width:34px;height:18px;margin-top:4px}
+.chk .tg .tk{fill:none;stroke:var(--press);stroke-width:1.5}
+.chk .tg .kn{fill:var(--press)}
+.on .chk .tg .kn{animation:tgOff .5s var(--ease) .55s both}
+@keyframes tgOff{from{transform:translateX(15px)}to{transform:translateX(0)}}
+
+
 .logos{display:flex;gap:26px;justify-content:center;align-items:center;flex-wrap:wrap;
   margin-top:16px}
 .lg{display:flex;align-items:center;gap:9px;font-size:var(--t-md);color:var(--newsprint);
@@ -958,7 +1045,14 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
         <div class="lbl">Will a real transcript fit?</div>
         
         <p class="b">Your plan may handle less text than the advertised model.</p>
-        <p class="b" style="color:var(--newsprint);font-size:var(--t-md);margin-top:10px">Test with a real, non-sensitive transcript first.</p>
+        
+        <div class="fit">
+          <div class="fr"><div class="fl">Headline spec</div>
+            <div class="fw" style="--win:330px"><i></i></div></div>
+          <div class="fr"><div class="fl">Your plan</div>
+            <div class="fw" style="--win:206px"><i></i></div></div>
+        </div>
+        <p class="b" style="color:var(--newsprint);font-size:var(--t-md);margin-top:12px">Test with a real, non-sensitive transcript first.</p>
         <div class="src">Your subscription can be smaller than the headline developer limit.</div>
       </div>
       <div class="card lead pv pv-vendor st st2">
@@ -999,7 +1093,13 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
       <p class="b" style="font-size:23px;line-height:1.4">Two details together can identify someone. Verbatim session content. Health, beliefs, relationships — most of what a coaching conversation contains.</p>
       <div class="src">Legal name: POPIA special personal information.</div>
     </div>
-    <p class="b st st2" style="margin-top:24px"><em>No names is not enough. Ask about the work pattern, not the person.</em></p>
+    
+    <div class="rw st st2">
+      <div class="pr"><s>My client Sarah, 42, divorcing</s></div>
+      <svg class="rar" viewBox="0 0 22 12" aria-hidden="true"><path d="M0 6h17M13.5 2.5L17 6l-3.5 3.5"/></svg>
+      <div class="pr">A leader facing personal upheaval</div>
+    </div>
+    <p class="b st st2" style="margin-top:20px"><em>No names is not enough. Ask about the work pattern, not the person.</em></p>
   </div>
 </section>
 
@@ -1018,7 +1118,13 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
     <div class="lbl tick rv"><span>Do you need a custom platform?</span></div>
     <h2 class="rv" style="margin-top:18px"><span>Use existing tools. Do not build a coaching AI platform.</span></h2>
     
-    <p class="b st st1" style="margin-top:24px"><em>Use what you have. Buy terms if needed. Configure. Stop.</em></p>
+    
+    <div class="path st st1" style="margin-top:22px">
+      <div class="pl dead"><div class="pn">Build</div>
+        <div class="steps"><span class="sp">Maintain</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg><span class="sp">Verify</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg><span class="sp">Fund</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg></div></div>
+      <div class="pl"><div class="pn">Buy</div>
+        <div class="steps"><span class="sp">Use what you have</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg><span class="sp">Buy terms</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg><span class="sp">Configure</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg><span class="sp">Stop</span></div></div>
+    </div>
     <div class="trio">
       <div class="pv pv-vendor st st2">
         <div class="lbl">Specialists</div>
@@ -1059,28 +1165,28 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
     <div class="lbl tick rv"><span>Notetakers</span></div>
     
     <h2 class="rv" style="margin-top:18px"><span>Pick by terms. Review every summary.</span></h2>
-    <div class="quad">
-      
-      <div class="pv pv-vendor st st1">
-        
-        <div class="lbl vd">Fireflies
+    
+    <div class="cmp">
+      <div class="ch"><span></span><span>Trains on your data</span><span>Default</span><span>With clients</span></div>
+      <div class="cr pv pv-vendor st st1">
+        <div class="vn">Fireflies
           <svg class="vg" viewBox="0 0 18 18" aria-hidden="true"><rect class="f" x="3.75" y="3.75" width="10.5" height="10.5"/></svg></div>
-        <p class="b" style="font-size:var(--t-lg)">Possible, with review. No personal-information training.</p>
+        <div class="cc">No</div><div class="cc">&mdash;</div><div class="cc">With review</div>
       </div>
-      <div class="pv pv-vendor st st2">
-        <div class="lbl vd">Otter
+      <div class="cr pv pv-vendor st st2">
+        <div class="vn">Otter
           <svg class="vg" viewBox="0 0 18 18" aria-hidden="true"><rect class="o" x="3.75" y="3.75" width="10.5" height="10.5"/><line class="o" x1="3.75" y1="14.25" x2="14.25" y2="3.75"/></svg></div>
-        <p class="b" style="font-size:var(--t-lg)">Avoid for clients. May train on recordings.</p>
+        <div class="cc">May</div><div class="cc">On</div><div class="cc">No</div>
       </div>
-      <div class="pv pv-vendor st st3">
-        <div class="lbl vd">Granola
+      <div class="cr pv pv-vendor st st3">
+        <div class="vn">Granola
           <svg class="vg" viewBox="0 0 18 18" aria-hidden="true"><rect class="o" x="3.75" y="3.75" width="10.5" height="10.5"/><rect class="f" x="3.75" y="3.75" width="5.25" height="10.5"/></svg></div>
-        <p class="b" style="font-size:var(--t-lg)">Opt out first. On until you do.</p>
+        <div class="cc">Until you opt out</div><div class="cc">On</div><div class="cc">After opt-out</div>
       </div>
-      <div class="pv pv-pending st st4">
-        <div class="lbl vd">Fathom
+      <div class="cr pv pv-pending st st4">
+        <div class="vn">Fathom
           <svg class="vg" viewBox="0 0 18 18" aria-hidden="true"><rect class="o d" x="3.75" y="3.75" width="10.5" height="10.5"/></svg></div>
-        <p class="b" style="font-size:var(--t-lg)">Unverified. Not for clients yet.</p>
+        <div class="cc">Unverified</div><div class="cc">&mdash;</div><div class="cc">Not yet</div>
       </div>
     </div>
     
@@ -1157,22 +1263,26 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
     <div class="split">
       <div class="card lead pv pv-vendor st st1">
         <div class="lbl">AI draft to inspect · eight lines</div>
-        <p class="b" style="font-size:var(--t-md);line-height:1.65;margin-top:10px">
-          1. CFO at listed Cape Town retailer.<br>
-          2. Board losing trust.<br>
-          3. Childhood patterns caused avoidance.<br>
-          4. Strategy was real problem.<br>
-          5. Client will send proposal Friday.<br>
-          6. Client seemed relieved.<br>
-          7. Coach suggested board pre-read.<br>
-          8. Action item audio unclear.
-        </p>
+        
+        <div class="tags">
+          <div class="tr"><span class="tl">1. CFO at listed Cape Town retailer.</span><span class="tv sq" data-step="1">Said</span></div>
+          <div class="tr"><span class="tl">2. Board losing trust.</span><span class="tv sq" data-step="1" style="transition-delay:.06s">Said</span></div>
+          <div class="tr"><span class="tl">3. Childhood patterns caused avoidance.</span><span class="tv inf sq" data-step="1" style="transition-delay:.12s">Inferred</span></div>
+          <div class="tr"><span class="tl">4. Strategy was real problem.</span><span class="tv inf sq" data-step="1" style="transition-delay:.18s">Inferred</span></div>
+          <div class="tr"><span class="tl">5. Client will send proposal Friday.</span><span class="tv act sq" data-step="1" style="transition-delay:.24s">Client action</span></div>
+          <div class="tr"><span class="tl">6. Client seemed relieved.</span><span class="tv inf sq" data-step="1" style="transition-delay:.30s">Inferred</span></div>
+          <div class="tr"><span class="tl">7. Coach suggested board pre-read.</span><span class="tv not sq" data-step="1" style="transition-delay:.36s">Not said</span></div>
+          <div class="tr"><span class="tl">8. Action item audio unclear.</span><span class="tv unc sq" data-step="1" style="transition-delay:.42s">Unclear</span></div>
+        </div>
         <div class="src">Fictional exercise artifact · no real client data</div>
       </div>
       
       <div class="pv pv-judgement sq" data-step="1">
         <div class="lbl">Reveal shape</div>
-        <p class="b" style="font-size:20px">Said. Inferred. Not said. Client action.</p>
+        
+        <div class="lgd">
+          <span class="tv">Said</span><span class="tv inf">Inferred</span><span class="tv not">Not said</span><span class="tv act">Client action</span><span class="tv unc">Unclear</span>
+        </div>
         <p class="b" style="color:var(--newsprint);font-size:var(--t-md);margin-top:12px">If audio is ambiguous, write <em>unclear</em>. Do not guess.</p>
       </div>
     </div>
@@ -1367,7 +1477,14 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
       <p class="b" style="font-size:var(--t-lg)">43 volunteered. 10 too brief. 17 usable transcripts.</p>
     </div>
     
-    <p class="b st st3" style="margin-top:20px">Do not treat fluency or agreement as coaching quality.</p>
+    
+    <div class="tm st st3" style="margin-top:20px">
+      <div class="tn"><div class="tnr">AI</div><div class="tnt">Agreeable</div></div>
+      <svg class="tar" viewBox="0 0 26 12" aria-hidden="true"><path d="M0 6h20M16.5 2.5L20 6l-3.5 3.5"/></svg>
+      <div class="tn"><div class="tnr">Buyer</div><div class="tnt">Reads as quality</div></div>
+      <svg class="tar" viewBox="0 0 26 12" aria-hidden="true"><path d="M0 6h20M16.5 2.5L20 6l-3.5 3.5"/></svg>
+      <div class="tn"><div class="tnr">Coach</div><div class="tnt">Sees gaps</div></div>
+    </div>
   </div>
 </section>
 
@@ -1454,11 +1571,22 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
     <h2 class="rv" style="margin-top:16px"><span>Open the privacy settings of the tool you already use.</span></h2>
     <div class="act st st1" style="margin-top:34px">
       <div class="lbl">Ten minutes</div>
-      <p class="b" style="font-size:24px;line-height:1.4;margin-top:10px">If it can be turned off, turn it off.</p>
+      
+      <div class="chk">
+        <div class="ci">
+          <svg class="cb" viewBox="0 0 15 15" aria-hidden="true"><rect x="1" y="1" width="13" height="13"/></svg>
+          <div class="ct">Open the settings</div><span></span></div>
+        <div class="ci">
+          <svg class="cb" viewBox="0 0 15 15" aria-hidden="true"><rect x="1" y="1" width="13" height="13"/></svg>
+          <div class="ct">If it can be turned off, turn it off.</div>
+          <svg class="tg" viewBox="0 0 34 18" aria-hidden="true"><rect class="tk" x="1" y="1" width="32" height="16" rx="8"/><circle class="kn" cx="9.5" cy="9" r="5"/></svg></div>
       
       
-      <p class="b" style="font-size:19px;margin-top:14px">Two seats: the business tier buys a data agreement. Solo: nothing identifiable.</p>
-      <p class="b" style="font-size:19px;margin-top:12px">If you have not checked, that is the ten minutes.</p>
+        <div class="ci">
+          <svg class="cb" viewBox="0 0 15 15" aria-hidden="true"><rect x="1" y="1" width="13" height="13"/></svg>
+          <div class="ct">Two seats: the business tier buys a data agreement. Solo: nothing identifiable.</div><span></span></div>
+      </div>
+      <p class="b" style="font-size:19px;margin-top:14px">If you have not checked, that is the ten minutes.</p>
     </div>
     <div class="pv pv-judgement st st2" style="margin-top:24px">
       <div class="lbl">Then</div>
