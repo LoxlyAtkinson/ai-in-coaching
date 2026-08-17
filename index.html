@@ -62,16 +62,24 @@ body{
   opacity:0;visibility:hidden;pointer-events:none;
   transition:opacity .45s var(--ease),visibility .45s;
 }
+
+.screen:not(.band){justify-content:flex-start}
 .screen.on{opacity:1;visibility:visible;pointer-events:auto}
 
 
 .screen:not(.band):not(.demo)::before{
   content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
   background:
+    
     linear-gradient(90deg,var(--bone) 0%,rgba(250,255,250,.93) 30%,
                     rgba(250,255,250,.78) 60%,rgba(250,255,250,.62) 100%),
     var(--bg-field) right center/cover no-repeat;
 }
+
+.in > .pv:not(:has(.gone,.cmp,.bars,.rub,.tags,.tm,.split,.chk,.path,.fit,.rw,.ladder,.logos,.chips)),
+.in > .card:not(:has(.gone,.cmp,.bars,.rub,.tags,.tm,.split,.chk,.path,.fit,.rw,.ladder,.logos,.chips)){
+  width:fit-content;max-width:min(100%,80ch)}
+
 
 .in{width:100%;max-width:1400px;margin:0 auto;position:relative;z-index:1}
 
@@ -107,7 +115,8 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 .pv-evidence  {border-left-style:solid;  border-left-color:var(--press)}
 .pv-vendor    {border-left-style:double; border-left-width:4px; border-left-color:var(--newsprint)}
 .pv-judgement {border-left-style:dotted; border-left-width:3px; border-left-color:var(--moss)}
-.pv-risk      {border-left-style:solid;  border-left-color:var(--risk)}
+
+.pv-risk      {border-left-style:solid;  border-left-width:6px; border-left-color:var(--risk)}
 .pv-pending   {border-left-style:dashed; border-left-color:var(--newsprint)}
 
 
@@ -192,8 +201,9 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 
 .band .huge{font-family:var(--display);font-size:clamp(52px,11vw,186px);line-height:.95;
   letter-spacing:-.045em;color:var(--press)}
-.band .num{font-family:var(--display);font-size:clamp(26px,3.4vw,52px);color:rgba(18,22,19,.42)}
-.band .lbl{color:rgba(18,22,19,.62)}
+
+.band .num{font-family:var(--display);font-size:clamp(26px,3.4vw,52px);color:rgba(18,22,19,.80)}
+.band .lbl{color:rgba(18,22,19,.88)}
 #wipe{position:fixed;inset:0;background:var(--green);transform:scaleY(0);transform-origin:bottom;
   transition:transform .55s var(--ease);z-index:60;pointer-events:none}
 #wipe.go{transform:scaleY(1)} #wipe.out{transform-origin:top;transform:scaleY(0)}
@@ -240,6 +250,9 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 .band :focus-visible,.demo :focus-visible,#grid :focus-visible{outline-color:var(--sage)}
 
 
+
+.split.even{grid-template-columns:1fr 1fr}
+.bars.eq .bar{grid-template-columns:minmax(0,104px) minmax(0,1fr) 78px}
 .bars{margin-top:20px;display:grid;gap:12px}
 .bar{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr) auto;
      gap:16px;align-items:center}
@@ -250,6 +263,8 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 .on .bar .bt > i{width:var(--w)}
 .bar .bv{font-family:var(--display);font-size:30px;line-height:1;letter-spacing:-.02em;
      color:var(--press);font-variant-numeric:tabular-nums}
+
+.count{font-variant-numeric:tabular-nums}
 
 .bar.q .bt > i{background:var(--newsprint)}
 .bar.q .bv{color:var(--newsprint)}
@@ -276,8 +291,13 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 
 
 .ladder{position:relative;margin-top:22px;padding-left:18px}
+
 .ladder::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:2px;
-  background:var(--press)}
+  background:var(--press);transform-origin:top;transform:scaleY(.34);
+  transition:transform .7s var(--ease)}
+
+.ladder:has(.rung.sq.up)::before{transform:scaleY(.67)}
+.ladder:has(.rung.sq.up ~ .rung.sq.up)::before{transform:scaleY(1)}
 .ladder .rung + .rung{margin-left:28px}
 .ladder .rung + .rung + .rung{margin-left:56px}
 
@@ -401,7 +421,8 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 .cmp .cc{font-size:var(--t-md);line-height:1.25;color:var(--newsprint)}
 
 
-.chk{margin-top:12px}
+
+.chk{margin-top:12px;max-width:640px}
 .chk .ci{display:grid;grid-template-columns:20px minmax(0,1fr) 44px;gap:14px;
   align-items:start;padding:9px 0;border-top:1px solid rgba(18,22,19,.14)}
 .chk .ci:first-child{border-top:0;padding-top:2px}
@@ -468,7 +489,8 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
   mix-blend-mode:difference;color:#fff}
 .meta .lbl{color:inherit;opacity:.9}
 
-.dots{position:fixed;right:calc(var(--pad) - 10px);top:50%;transform:translateY(-50%);
+
+.dots{position:fixed;right:20px;top:50%;transform:translateY(-50%);
   z-index:40;display:flex;flex-direction:column;gap:14px}
 .dot{width:9px;height:9px;border:1px solid var(--newsprint);cursor:pointer;padding:0;
   background:transparent;font:inherit;color:inherit;
@@ -496,6 +518,11 @@ body.on-band .meta .lbl{color:rgba(18,22,19,.72)}
 body.on-band #prog{background:var(--press)}
 body.on-band .dot{border-color:rgba(18,22,19,.5)}
 body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
+
+body.on-demo .dot{border-color:rgba(250,255,250,.55)}
+body.on-demo .dot.cur{background:var(--bone);border-color:var(--bone)}
+
+body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,250,.82)}
 
 #grid{position:fixed;inset:0;background:var(--press);z-index:70;padding:var(--pad);overflow-y:auto;
   opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility .3s}
@@ -525,6 +552,8 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
   .screen.demo{display:none!important;page-break-after:avoid!important}
   .rv>span,.st{transform:none!important;opacity:1!important;transition:none!important}
   
+  
+  .ladder::before{transform:none!important}
   .sq{opacity:1!important;visibility:visible!important;transform:none!important;
       transition:none!important;pointer-events:auto!important}
   
@@ -547,12 +576,36 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
 .printnum{display:none}
 
 @media (max-width:900px){
+  
+  .screen{justify-content:flex-start;overflow-y:auto;overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    padding-top:calc(var(--pad) + 40px);padding-bottom:calc(var(--pad) + 28px)}
+  .screen.band{justify-content:center}
+  
+  .hint{display:none}
   .split,.trio,.quad{grid-template-columns:1fr}
   .demo-flow{grid-template-columns:1fr}
   .mx{grid-template-columns:1fr}
   .mx .ax{display:none}
   .rung{grid-template-columns:1fr;gap:8px}
   .dots{display:none}
+  
+  .split.even{grid-template-columns:1fr}
+  
+  .cmp .ch{display:none}
+  .cmp .cr{grid-template-columns:1fr;gap:3px;padding:10px 0 10px 15px}
+  .cmp .vn{font-size:19px;margin-bottom:2px}
+  .cmp .cc::before{content:attr(data-l) ": ";color:var(--newsprint);opacity:.72;
+    font-size:13px;text-transform:uppercase;letter-spacing:.07em}
+  .rub .rh,.rub .rr{grid-template-columns:minmax(0,1fr) 64px 64px}
+  .tags .tr{grid-template-columns:minmax(0,1fr) 96px}
+  .tm{grid-template-columns:1fr;gap:8px}
+  .tm .tar{display:none}
+  .rw{grid-template-columns:1fr;gap:10px}
+  .rw .rar{transform:rotate(90deg);justify-self:start}
+  .fit .fr{grid-template-columns:88px minmax(0,1fr)}
+  .fit .fw{width:min(var(--win),100%)}
+  .chk{max-width:none}
   
   .cgrp{flex:1 1 100%}
   .ladder{padding-left:14px}
@@ -576,6 +629,8 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
     pointer-events:auto!important;min-height:100vh;transition:none!important}
   .rv>span,.st{transform:none!important;opacity:1!important;transition:none!important}
   
+  
+  .ladder::before{transform:none!important}
   .sq{opacity:1!important;visibility:visible!important;transform:none!important;
       transition:none!important;pointer-events:auto!important}
   .sw{background-size:100% 8%!important}   
@@ -789,13 +844,13 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
     
     <div class="lbl tick rv"><span>AI in the chair is not proven</span></div>
     <h2 class="rv" style="margin-top:18px"><span>The research does not prove open-ended AI coaching works.</span></h2>
-    <div class="split">
+    <div class="split even">
       <div class="card lead pv pv-evidence st st1">
         
         <div class="lbl">2022 trial</div>
         <p class="b">On goals alone, AI matched the human group.</p>
         
-        <div class="bars">
+        <div class="bars eq">
           <div class="bar"><div class="bl">Human</div><div class="bt"><i style="--w:88%"></i></div></div>
           <div class="bar q"><div class="bl">AI</div><div class="bt"><i style="--w:88%"></i></div></div>
         </div>
@@ -804,7 +859,7 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
         <div class="lbl">2026 trial</div>
         <p class="b">Human coaching helped. The AI group did not.</p>
         
-        <div class="bars">
+        <div class="bars eq">
           <div class="bar"><div class="bl">Human</div><div class="bt"><i style="--w:100%"></i></div><div class="bv">Helped</div></div>
           <div class="bar q"><div class="bl">AI</div><div class="bt"><i style="--w:5%"></i></div><div class="bv">Did not</div></div>
         </div>
@@ -894,14 +949,14 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
         <div class="cbkt"></div>
         <div class="cnote pv-judgement">The ethical decision. Usually an afternoon.</div>
       </div>
-      <div class="cgrp" style="--n:1">
+      <div class="cgrp sq" data-step="1" style="--n:1">
         <div class="crow">
           <div class="link hot"><div class="n">04</div><div class="t">Model + version</div></div>
         </div>
         <div class="cbkt"></div>
         <div class="cnote pv-judgement">The technical decision. Usually ten minutes.</div>
       </div>
-      <div class="cgrp" style="--n:2">
+      <div class="cgrp sq" data-step="2" style="--n:2">
         <div class="crow">
           <div class="link small"><div class="n">05</div><div class="t">Workflow</div></div>
           <div class="link small"><div class="n">06</div><div class="t">Review date</div></div>
@@ -910,7 +965,7 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
     </div>
     
     
-    <p class="b st st1" style="margin-top:14px;font-size:var(--t-lg);color:var(--newsprint)">Decide what you will type before choosing provider, model, or version.</p>
+    <p class="b sq" data-step="2" style="margin-top:14px;font-size:var(--t-lg);color:var(--newsprint)">Decide what you will type before choosing provider, model, or version.</p>
   </div>
 </section>
 
@@ -933,7 +988,8 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
       </div>
       <div class="card lead pv pv-vendor st st2">
         
-        <div class="lbl">Training by default?</div>
+        
+        <div class="lbl">Protected by default?</div>
         <p class="b">Business: no training by default. Consumer: you must opt out.</p>
         
         <div class="bars">
@@ -960,23 +1016,23 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
         <div class="name">Consumer</div>
         <div class="what">May train unless you opt out. No signed agreement.</div>
       </div>
-      <div class="rung pv pv-vendor st st2">
+      <div class="rung pv pv-vendor sq" data-step="1">
         <div class="name">Commercial</div>
         <div class="what">No training by default. Signed data agreement.</div>
       </div>
-      <div class="rung pv pv-vendor st st3">
+      <div class="rung pv pv-vendor sq" data-step="2">
         <div class="name">Enterprise</div>
         <div class="what">Choose where data is stored. No African region.</div>
       </div>
     </div>
     
     
-    <div class="pv pv-vendor st st4" style="margin-top:20px">
+    <div class="pv pv-vendor sq" data-step="3" style="margin-top:20px">
       <div class="lbl">Both true</div>
       <p class="b" style="font-size:19px">Free Gemini: capable at zero rand. Same vendor: type nothing confidential.</p>
     </div>
     
-    <p class="b st st4" style="font-size:var(--t-md);margin-top:16px;color:var(--newsprint)">Data agreement means written data-processing agreement.</p>
+    <p class="b sq" data-step="3" style="font-size:var(--t-md);margin-top:16px;color:var(--newsprint)">Data agreement means written data-processing agreement.</p>
   </div>
 </section>
 
@@ -1121,7 +1177,7 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
     
     <div class="path st st1" style="margin-top:22px">
       <div class="pl dead"><div class="pn">Build</div>
-        <div class="steps"><span class="sp">Maintain</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg><span class="sp">Verify</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg><span class="sp">Fund</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg></div></div>
+        <div class="steps"><span class="sp">Maintain</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg><span class="sp">Verify</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg><span class="sp">Fund</span></div></div>
       <div class="pl"><div class="pn">Buy</div>
         <div class="steps"><span class="sp">Use what you have</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg><span class="sp">Buy terms</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg><span class="sp">Configure</span><svg class="ar" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5h12M9 2l3 3-3 3"/></svg><span class="sp">Stop</span></div></div>
     </div>
@@ -1153,8 +1209,8 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
       <div class="lbl">Ranked by value against effort</div>
       <div class="rung" style="border:0;padding:14px 0"><div class="name">01</div><div class="what">Post-session summary. Read it before it is filed.</div></div>
       
-      <div class="rung" style="border:0;padding:14px 0"><div class="name">02</div><div class="what">Session prep from notes. A separate project for each client.</div></div>
-      <div class="rung" style="border:0;padding:14px 0"><div class="name">03</div><div class="what">Contracting and programme drafts. No client data needed.</div></div>
+      <div class="rung sq" data-step="1" style="border:0;padding:14px 0"><div class="name">02</div><div class="what">Session prep from notes. A separate project for each client.</div></div>
+      <div class="rung sq" data-step="2" style="border:0;padding:14px 0"><div class="name">03</div><div class="what">Contracting and programme drafts. No client data needed.</div></div>
     </div>
   </div>
 </section>
@@ -1171,22 +1227,22 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
       <div class="cr pv pv-vendor st st1">
         <div class="vn">Fireflies
           <svg class="vg" viewBox="0 0 18 18" aria-hidden="true"><rect class="f" x="3.75" y="3.75" width="10.5" height="10.5"/></svg></div>
-        <div class="cc">No</div><div class="cc">&mdash;</div><div class="cc">With review</div>
+        <div class="cc" data-l="Trains on your data">No</div><div class="cc" data-l="Default">&mdash;</div><div class="cc" data-l="With clients">With review</div>
       </div>
       <div class="cr pv pv-vendor st st2">
         <div class="vn">Otter
           <svg class="vg" viewBox="0 0 18 18" aria-hidden="true"><rect class="o" x="3.75" y="3.75" width="10.5" height="10.5"/><line class="o" x1="3.75" y1="14.25" x2="14.25" y2="3.75"/></svg></div>
-        <div class="cc">May</div><div class="cc">On</div><div class="cc">No</div>
+        <div class="cc" data-l="Trains on your data">May</div><div class="cc" data-l="Default">On</div><div class="cc" data-l="With clients">No</div>
       </div>
       <div class="cr pv pv-vendor st st3">
         <div class="vn">Granola
           <svg class="vg" viewBox="0 0 18 18" aria-hidden="true"><rect class="o" x="3.75" y="3.75" width="10.5" height="10.5"/><rect class="f" x="3.75" y="3.75" width="5.25" height="10.5"/></svg></div>
-        <div class="cc">Until you opt out</div><div class="cc">On</div><div class="cc">After opt-out</div>
+        <div class="cc" data-l="Trains on your data">Until you opt out</div><div class="cc" data-l="Default">On</div><div class="cc" data-l="With clients">After opt-out</div>
       </div>
       <div class="cr pv pv-pending st st4">
         <div class="vn">Fathom
           <svg class="vg" viewBox="0 0 18 18" aria-hidden="true"><rect class="o d" x="3.75" y="3.75" width="10.5" height="10.5"/></svg></div>
-        <div class="cc">Unverified</div><div class="cc">&mdash;</div><div class="cc">Not yet</div>
+        <div class="cc" data-l="Trains on your data">Unverified</div><div class="cc" data-l="Default">&mdash;</div><div class="cc" data-l="With clients">Not yet</div>
       </div>
     </div>
     
@@ -1265,19 +1321,19 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
         <div class="lbl">AI draft to inspect · eight lines</div>
         
         <div class="tags">
-          <div class="tr"><span class="tl">1. CFO at listed Cape Town retailer.</span><span class="tv sq" data-step="1">Said</span></div>
-          <div class="tr"><span class="tl">2. Board losing trust.</span><span class="tv sq" data-step="1" style="transition-delay:.06s">Said</span></div>
-          <div class="tr"><span class="tl">3. Childhood patterns caused avoidance.</span><span class="tv inf sq" data-step="1" style="transition-delay:.12s">Inferred</span></div>
-          <div class="tr"><span class="tl">4. Strategy was real problem.</span><span class="tv inf sq" data-step="1" style="transition-delay:.18s">Inferred</span></div>
-          <div class="tr"><span class="tl">5. Client will send proposal Friday.</span><span class="tv act sq" data-step="1" style="transition-delay:.24s">Client action</span></div>
-          <div class="tr"><span class="tl">6. Client seemed relieved.</span><span class="tv inf sq" data-step="1" style="transition-delay:.30s">Inferred</span></div>
-          <div class="tr"><span class="tl">7. Coach suggested board pre-read.</span><span class="tv not sq" data-step="1" style="transition-delay:.36s">Not said</span></div>
-          <div class="tr"><span class="tl">8. Action item audio unclear.</span><span class="tv unc sq" data-step="1" style="transition-delay:.42s">Unclear</span></div>
+          <div class="tr"><span class="tl">1. CFO at listed Cape Town retailer.</span><span class="tvNone sq" data-step="2">Said</span></div>
+          <div class="tr"><span class="tl">2. Board losing trust.</span><span class="tvNone sq" data-step="3">Said</span></div>
+          <div class="tr"><span class="tl">3. Childhood patterns caused avoidance.</span><span class="tv inf sq" data-step="4">Inferred</span></div>
+          <div class="tr"><span class="tl">4. Strategy was real problem.</span><span class="tv inf sq" data-step="5">Inferred</span></div>
+          <div class="tr"><span class="tl">5. Client will send proposal Friday.</span><span class="tv act sq" data-step="6">Client action</span></div>
+          <div class="tr"><span class="tl">6. Client seemed relieved.</span><span class="tv inf sq" data-step="7">Inferred</span></div>
+          <div class="tr"><span class="tl">7. Coach suggested board pre-read.</span><span class="tv not sq" data-step="8">Not said</span></div>
+          <div class="tr"><span class="tl">8. Action item audio unclear.</span><span class="tv unc sq" data-step="9">Unclear</span></div>
         </div>
         <div class="src">Fictional exercise artifact · no real client data</div>
       </div>
       
-      <div class="pv pv-judgement sq" data-step="1">
+      <div class="pv pv-judgement sq" data-role="framework" data-step="1">
         <div class="lbl">Reveal shape</div>
         
         <div class="lgd">
@@ -1374,7 +1430,8 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
       </div>
       <div class="pv pv-evidence st st3">
         <div class="lbl">What coaches use</div>
-        <p class="b" style="font-size:var(--t-lg)">47% use digital platforms. 53% use none.</p>
+        
+        <p class="b" style="font-size:var(--t-lg)"><span class="count" data-to="47">47</span>% use digital platforms. <span class="count" data-to="53">53</span>% use none.</p>
         <div class="src">The 53% figure comes from an ICF blog, not the executive summary.</div>
       </div>
     </div>
@@ -1471,14 +1528,14 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
         <div class="src">Nam &amp; Choi, PLOS ONE, 26 Mar 2026; 15 South Korean HR leaders; qualitative themes only.</div>
       </div>
     </div>
-    <div class="pv pv-evidence st st3" style="margin-top:20px">
+    <div class="pv pv-evidence sq" data-step="1" style="margin-top:20px">
       
       <div class="lbl">Small sample</div>
       <p class="b" style="font-size:var(--t-lg)">43 volunteered. 10 too brief. 17 usable transcripts.</p>
     </div>
     
     
-    <div class="tm st st3" style="margin-top:20px">
+    <div class="tm sq" data-step="2" style="margin-top:20px">
       <div class="tn"><div class="tnr">AI</div><div class="tnt">Agreeable</div></div>
       <svg class="tar" viewBox="0 0 26 12" aria-hidden="true"><path d="M0 6h20M16.5 2.5L20 6l-3.5 3.5"/></svg>
       <div class="tn"><div class="tnr">Buyer</div><div class="tnt">Reads as quality</div></div>
@@ -1546,14 +1603,14 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
         
         <p class="b" style="font-size:var(--t-md);margin-top:10px">The most sensitive thing you type picks the account.</p>
       </div>
-      <div class="pv pv-judgement st st2">
+      <div class="pv pv-judgement sq" data-step="1">
         <div class="lbl">02</div>
         <h3 style="margin-top:8px">Buy and configure. Do not build.</h3>
         <p class="b" style="font-size:var(--t-md);margin-top:10px">Use the subscription you already pay for.</p>
       </div>
     </div>
     
-    <div class="pv pv-evidence st st3" style="margin-top:20px">
+    <div class="pv pv-evidence sq" data-step="2" style="margin-top:20px">
       <div class="lbl">03</div>
       <h3 style="margin-top:8px;font-size:clamp(23px,2.6vw,36px)">Narrow support, behind you: yes.
         <span class="sw">Replacing the coach: no.</span></h3>
@@ -1586,7 +1643,8 @@ body.on-band .dot.cur{background:var(--press);border-color:var(--press)}
           <svg class="cb" viewBox="0 0 15 15" aria-hidden="true"><rect x="1" y="1" width="13" height="13"/></svg>
           <div class="ct">Two seats: the business tier buys a data agreement. Solo: nothing identifiable.</div><span></span></div>
       </div>
-      <p class="b" style="font-size:19px;margin-top:14px">If you have not checked, that is the ten minutes.</p>
+      
+      <p class="b" style="font-size:19px;margin-top:14px"><span class="pulse-echo">some of you</span> have not checked. That is the ten minutes.</p>
     </div>
     <div class="pv pv-judgement st st2" style="margin-top:24px">
       <div class="lbl">Then</div>
@@ -1668,15 +1726,61 @@ const contentTotal=S.filter(s=>s.dataset.slide).length;
 let step=0,seed=0;
 const sq=n=>[...S[n].querySelectorAll('.sq')];
 const maxStep=n=>sq(n).reduce((m,e)=>Math.max(m,+e.dataset.step||1),0);
+/* POSITION SURVIVES A REFRESH — and a crash. A presenter who reloads, or whose browser dies
+   forty minutes into a fifty-minute talk, was being returned to slide 1 in front of the room
+   with no way back except pressing right forty times.
+
+   localStorage, not sessionStorage: sessionStorage dies with the tab, which is the exact
+   case that matters (a crash, or closing the wrong window). The 12-hour freshness window
+   stops it stranding you at slide 23 when you open the deck cold next month — after that it
+   is ignored and you start at the beginning. Both the slide AND the step within it are kept,
+   so a reload mid-reveal comes back with the same blocks showing.
+
+   Home still resets to slide 1, which immediately writes position 0 — that is the manual
+   reset if you ever want one. */
+function savePos(){
+  try{localStorage.setItem('deckPos',JSON.stringify({i:i,step:step,t:Date.now()}));}catch(e){}
+}
+/* Counts re-arm on arrival so walking back and forward replays them; without this a figure
+   would climb once per session and be static every time the presenter returned to the slide. */
+function armCounts(){
+  S[i].querySelectorAll('.count').forEach(el=>{delete el.dataset.ran;});
+}
+/* Fires from paintSteps, which runs both on arrival and on every gate — so a figure inside a
+   gated block waits for its reveal instead of counting to itself behind a hidden panel. */
+function runCounts(){
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
+  S[i].querySelectorAll('.count').forEach(el=>{
+    if(el.dataset.ran) return;
+    const gate = el.closest('.sq');
+    if(gate && !gate.classList.contains('up')) return;
+    const to = parseFloat(el.dataset.to);
+    if(!isFinite(to)) return;
+    el.dataset.ran='1';
+    if(reduce){el.textContent=to;return;}
+    const t0=performance.now(), dur=850;
+    const tick=now=>{
+      const k=Math.min(1,(now-t0)/dur);
+      el.textContent=Math.round(to*(1-Math.pow(1-k,3)));
+      if(k<1) requestAnimationFrame(tick); else el.textContent=to;
+    };
+    requestAnimationFrame(tick);
+  });
+}
 function paintSteps(){
   sq(i).forEach(e=>e.classList.toggle('up',(+e.dataset.step||1)<=step));
   paintPresenter();
+  savePos();
+  runCounts();
 }
 
 function paint(){
   // The fixed chrome blends against whatever is under it; on a green band that turns
   // white into magenta. Tag the body so the chrome can opt out of the blend.
   document.body.classList.toggle('on-band',S[i].classList.contains('band'));
+  // Same reason as on-band: the fixed chrome sits over whatever screen is showing, and the
+  // demo holds are darker than the bands. Without this the rail is invisible on them.
+  document.body.classList.toggle('on-demo',S[i].classList.contains('demo'));
   prog.style.width=((i+1)/S.length*100)+'%';
   const sl=S[i].dataset.slide;
   cnt.textContent=sl?('SLIDE '+p2(+sl)+' / '+contentTotal):(S[i].dataset.t||'');
@@ -1702,7 +1806,7 @@ function show(n,from){
   const band=S[n].classList.contains('band')||S[i].classList.contains('band')
           || S[n].classList.contains('demo')||S[i].classList.contains('demo');
   const swap=()=>{S[i].classList.remove('on');i=n;step=seed;S[i].classList.add('on');
-    paintSteps();paint();};
+    armCounts();paintSteps();paint();};
   const done=()=>{busy=false;
     if(queued!==null){const q=queued;queued=null;if(q!==i)show(q);}};
   if(band){
@@ -1746,8 +1850,11 @@ function zoneGo(d){
    script's direction is "read the shape aloud, do not tally precisely" — so the fix is to
    make every state read as a natural sentence instead of a slot: "most of you", "a few of
    you", and an unpressed default that is still a real English phrase. */
-const PULSE_DEFAULT='some of you';
-const PULSE_SHAPE={NO:'most of you',YES:'a few of you'};
+/* Capitalised because .pulse-echo OPENS the closing sentence on s29 — lowercase there
+   shipped a sentence starting mid-word on the last frame the room sees, which the R6
+   critics caught. #roomAnswer lowercases its own copy separately below. */
+const PULSE_DEFAULT='Some of you';
+const PULSE_SHAPE={NO:'Most of you',YES:'A few of you'};
 function paintPulse(v){
   const shape=PULSE_SHAPE[v]||PULSE_DEFAULT;
   document.querySelectorAll('.pulse-echo').forEach(e=>{e.textContent=shape;});
@@ -1770,6 +1877,35 @@ document.addEventListener('click',e=>{
   const s=e.target.closest('.sw');if(!s)return;
   s.classList.add('rp');
   requestAnimationFrame(()=>requestAnimationFrame(()=>s.classList.remove('rp')));
+});
+
+/* ═══ CLICK ANYWHERE TO ADVANCE ═══
+   The 56px edge strips were the only pointer navigation, and they are display:none below
+   900px — so on a phone or tablet there was no way to move through the deck at all. A click
+   on the frame now advances, which also gives the presenter a remote/clicker path that does
+   not depend on hitting a strip.
+
+   Everything that has its own job is excluded, or the room-pulse chips would register a vote
+   AND jump the slide in the same press, and the overview grid would advance behind the tile
+   you just picked:
+     · buttons, links, form controls, and anything carrying its own onclick (the .zone strips
+       call zoneGo themselves — without this exclusion the bubble would double-advance)
+     · the .sw marker, which has the ripple handler directly above
+     · any click while the overview is open
+     · any click that completes a text selection, matching zoneGo's existing rule — reading a
+       source line often ends with the pointer mid-sentence, and navigating out from under
+       the words someone is halfway through is worse than doing nothing. */
+/* A screen scrolls on mobile, and a tap that ends a scroll must not also advance — landing
+   two slides on from where you were reading is the fastest way to make touch feel broken. */
+let lastScroll=0;
+document.addEventListener('scroll',()=>{lastScroll=Date.now();},true);
+document.addEventListener('click',e=>{
+  if(e.target.closest('button,a[href],input,select,textarea,label,[onclick],.chip,.dot,.zone,.sw,#grid'))return;
+  if(grid.classList.contains('on'))return;
+  if(Date.now()-lastScroll<400)return;
+  const sel=window.getSelection&&window.getSelection();
+  if(sel&&!sel.isCollapsed&&String(sel).trim().length)return;
+  go(1);
 });
 
 /* section-level dots — one per GROUP, not one per screen */
@@ -1894,7 +2030,16 @@ function handleKey(e){
 }
 document.addEventListener('keydown',handleKey);
 
-S[0].classList.add('on');
+/* Restore before the first paint, so the room never sees slide 1 flash past on a reload.
+   Guarded hard: a corrupt or stale entry, an index past the end of the deck, or a step past
+   what this slide actually has, all fall back to the beginning rather than throwing. */
+try{
+  const sv=JSON.parse(localStorage.getItem('deckPos')||'null');
+  if(sv&&typeof sv.i==='number'&&sv.i>0&&sv.i<S.length&&(Date.now()-(sv.t||0))<432e5){
+    i=sv.i;target=i;step=Math.max(0,Math.min(+sv.step||0,maxStep(i)));
+  }
+}catch(e){}
+S[i].classList.add('on');
 paintSteps();
 paint();
 
