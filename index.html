@@ -64,6 +64,10 @@ body{
 }
 
 .screen:not(.band){justify-content:flex-start}
+.screen:not(.band) > .in{margin-top:clamp(88px,14vh,132px)}
+
+.screen.tall{justify-content:center}
+.screen.tall > .in{margin-top:0}
 .screen.on{opacity:1;visibility:visible;pointer-events:auto}
 
 
@@ -188,7 +192,8 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 
 
 
-.act{border-left:3px solid var(--green);padding-left:22px;max-width:860px}
+.act{border-left:3px solid var(--green);padding-left:22px}
+[data-id="s29"] .act{max-width:860px}
 .act .lbl{color:var(--press)}
 
 
@@ -551,6 +556,8 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
     display:block!important;transition:none!important}
   .screen:last-child{page-break-after:auto}
   
+  .screen > .in{margin-top:0!important}
+  
   .screen::before{display:none!important}
   
   .screen.demo{display:none!important;page-break-after:avoid!important}
@@ -581,6 +588,11 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
 
 @media (max-width:900px){
   
+  
+  
+  .chk .ct{text-wrap:balance}
+  .screen:not(.band) > .in,.screen.tall > .in{margin-top:0}
+  .screen.tall{justify-content:flex-start}
   .screen{justify-content:flex-start;overflow-y:auto;overscroll-behavior:contain;
     -webkit-overflow-scrolling:touch;
     padding-top:calc(var(--pad) + 40px);padding-bottom:calc(var(--pad) + 28px)}
@@ -622,7 +634,7 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
 @media (prefers-reduced-motion:reduce){
   
   *{transition-duration:.01ms!important;animation-duration:.01ms!important;
-    animation-iteration-count:1!important}
+    animation-delay:0s!important;animation-iteration-count:1!important}
   .rv>span{transform:none}.sw{background-size:100% 8%}.struck::after{width:100%}
   
   .sq{transform:none;transition:none!important}
@@ -742,7 +754,8 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
   </div>
 </section>
 
-<section class="screen" data-slide="3" data-id="s03" data-g="Pulse" data-t="Room pulse">
+
+<section class="screen tall" data-slide="3" data-id="s03" data-g="Pulse" data-t="Room pulse">
   <div class="in" style="text-align:center">
     <div class="printnum">Slide 03 · Pulse</div>
     <div class="lbl tick rv" style="justify-content:center"><span>Room pulse · not research</span></div>
@@ -811,7 +824,8 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
   </div>
 </section>
 
-<section class="screen" data-slide="5" data-id="s05" data-g="Distinction" data-t="The profession drew the line">
+
+<section class="screen tall" data-slide="5" data-id="s05" data-g="Distinction" data-t="The profession drew the line">
   <div class="in">
     <div class="printnum">Slide 05 · Distinction</div>
     <div class="lbl tick rv"><span>The line</span></div>
@@ -1477,7 +1491,8 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
   </div>
 </section>
 
-<section class="screen" data-slide="25" data-id="s25" data-g="Field Evidence" data-t="The bot that reached PCC">
+
+<section class="screen tall" data-slide="25" data-id="s25" data-g="Field Evidence" data-t="The bot that reached PCC">
   <div class="in">
     <div class="printnum">Slide 25 · Field Evidence</div>
     
