@@ -283,6 +283,31 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 .chip.picked{border-left:3px solid var(--press);border-color:var(--press);font-weight:600}
 
 
+.rm{display:none}
+.rm.on{display:block;margin-top:18px;border-top:1px solid rgba(18,22,19,.16);padding-top:12px}
+.rm .rmh{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--press);
+  opacity:.62;margin-bottom:8px}
+
+.rm .rmg.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:38px}
+.rm .rmr{display:grid;grid-template-columns:minmax(110px,190px) minmax(0,1fr) 42px;gap:12px;
+  align-items:center;margin-bottom:5px;font-size:var(--t-sm)}
+.rm .rmt{height:10px;background:rgba(18,22,19,.10);border-radius:0;overflow:hidden}
+
+.rm .rmf{height:100%;background:var(--press);width:0;transition:width .55s var(--ease)}
+.rm .rmn{text-align:right;font-variant-numeric:tabular-nums;color:var(--press);opacity:.72;
+  font-size:var(--t-sm)}
+.rm .rmc{font-size:var(--t-sm);color:var(--newsprint);opacity:.72;margin-top:8px}
+
+
+.chip{position:relative;overflow:hidden}
+.chip .cf{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(18,22,19,.13);
+  transition:width .55s var(--ease);z-index:0;pointer-events:none}
+.chip > *{position:relative;z-index:1}
+.chip .cn{margin-left:10px;font-variant-numeric:tabular-nums;opacity:.7;font-weight:400}
+
+@media print{.rm{display:none!important}}
+
+
 .pending{display:inline-flex;align-items:center;gap:10px;border:1px dashed var(--newsprint);
   padding:10px 16px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;
   color:var(--press);margin-top:18px}
@@ -765,7 +790,7 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
     <h2 class="rv" style="margin:14px auto 0;max-width:22ch"><span>Have you checked whether</span></h2>
     <h2 class="rv"><span>your AI provider learns</span></h2>
     <h2 class="rv"><span>from what you type?</span></h2>
-    <div class="chips st st1" style="justify-content:center">
+    <div class="chips st st1" data-poll="data-check" style="justify-content:center">
       
       <button type="button" class="chip" aria-pressed="false" onclick="pulse(this,'YES')">Yes</button>
       <button type="button" class="chip" aria-pressed="false" onclick="pulse(this,'NO')">No</button>
@@ -1015,6 +1040,8 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
       </div>
     </div>
     <p class="b st st3" style="margin-top:24px">Choose the account rules, not the ranking.</p>
+    
+    <div class="rm" data-poll="training-aware"></div>
   </div>
 </section>
 
@@ -1272,6 +1299,8 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
       </div>
     </div>
     <div class="src">Based on captured terms for this deck; review every summary.</div>
+    
+    <div class="rm" data-poll="dictation"></div>
   </div>
 </section>
 
@@ -1557,6 +1586,8 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
       <svg class="tar" viewBox="0 0 26 12" aria-hidden="true"><path d="M0 6h20M16.5 2.5L20 6l-3.5 3.5"/></svg>
       <div class="tn"><div class="tnr">Coach</div><div class="tnt">Sees gaps</div></div>
     </div>
+    
+    <div class="rm" data-poll="ai-writing"></div>
   </div>
 </section>
 
