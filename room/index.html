@@ -106,6 +106,25 @@
   /* Reduced motion gets a steady dot, not a missing one — it still says "live and waiting". */
   @media (prefers-reduced-motion:reduce){.pulse{animation:none;opacity:.9}}
 
+  /* Submit. Deliberately large and deliberately the last thing on the page — it is the only
+     action in the popup and it should be reachable with a thumb without hunting. */
+  .submit{display:block;width:100%;min-height:56px;margin-top:22px;padding:14px 20px;
+    border:1px solid var(--press);border-radius:10px;background:var(--press);color:var(--bone);
+    font:inherit;font-weight:600;font-size:17px;cursor:pointer;
+    -webkit-tap-highlight-color:transparent}
+  .submit:disabled{opacity:.38;cursor:default}
+  .submit:focus-visible{outline:2px solid var(--press);outline-offset:3px}
+
+  /* POPUP CHROME. The popup is a single question over the presentation, not a second app:
+     the privacy note and the running header would be repetition of something they just read
+     on the deck, and vertical space on a phone popup is the scarcest thing there is. */
+  body.popup .priv{display:none}
+  body.popup header{border-bottom:0;padding-bottom:6px;margin-bottom:14px}
+  body.popup h1{font-size:15px;opacity:.66;font-weight:500}
+  body.popup .sub{display:none}
+  body.popup .q{margin-bottom:0}
+  body.popup .q.live{border-left:0;padding-left:0;margin-left:0}
+
   .done{border-top:1px solid var(--line);padding-top:22px;margin-top:8px;font-size:15px}
   .skel{height:56px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;opacity:.4}
   .fail{border:1px solid #a3261d;border-radius:10px;padding:16px;font-size:15px}
@@ -163,6 +182,16 @@
   var SUPABASE_URL = window.ROOM_SUPABASE_URL || 'https://ashhfzmoqpjiwvklzopx.supabase.co';
   var SUPABASE_ANON = window.ROOM_SUPABASE_ANON || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzaGhmem1vcXBqaXd2a2x6b3B4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTM3MjksImV4cCI6MjEwMjUyOTcyOX0.Ebjq-qw5NIN8QAgccJuJxaPLx66CJ_zy7x1B1k0E-pE';
 
+  /* POPUP MODE. The room does not get a separate URL — they open the presentation itself,
+     tap a banner when a question is live, and this page opens over it as a popup carrying ONE
+     question. They answer, press Submit, and the popup closes them straight back to the deck.
+     Same origin as the deck, so the localStorage record of what they answered is shared: the
+     deck reads it to stop offering a question they have already answered. */
+  var QP    = new URLSearchParams(location.search);
+  var POPUP = QP.get('popup') === '1';
+  var ONLY  = QP.get('poll') || null;
+  if (POPUP) document.body.classList.add('popup');
+
   var qs = document.getElementById('qs');
   var doneEl = document.getElementById('done');
 
@@ -215,6 +244,94 @@
     qs.appendChild(d);
   }
 
+
+  /* The popup's whole job: one question, one Submit, then get out of the way. It reuses the
+     same option markup as the full page so the two never drift apart visually. */
+  function renderOne(p, mine){
+    qs.innerHTML = '';
+    var picked = (mine[p.id] && mine[p.id].choice) || [];
+    var sec = document.createElement('section');
+    sec.className = 'q ' + p.kind + ' live';
+
+    var h = document.createElement('h2'); h.className='qt'; h.textContent = p.question;
+    var hint = document.createElement('p'); hint.className='qh';
+    hint.textContent = p.kind === 'multi' ? 'Choose as many as apply.' : 'Choose one.';
+    sec.appendChild(h); sec.appendChild(hint);
+
+    var otherInput = null;
+    var status = document.createElement('p'); status.className = 'saved';
+
+    (p.options || []).forEach(function(o){
+      var b = document.createElement('button');
+      b.type='button'; b.className='opt'; b.dataset.value = o.value;
+      b.setAttribute('aria-pressed', picked.indexOf(o.value) > -1 ? 'true' : 'false');
+      var box = document.createElement('span'); box.className='box'; box.setAttribute('aria-hidden','true');
+      var lab = document.createElement('span'); lab.textContent = o.label;
+      b.appendChild(box); b.appendChild(lab);
+      b.addEventListener('click', function(){
+        if (p.kind === 'single') {
+          [].slice.call(sec.querySelectorAll('.opt')).forEach(function(x){
+            x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+        } else {
+          b.setAttribute('aria-pressed', b.getAttribute('aria-pressed')==='true' ? 'false' : 'true');
+        }
+        submit.disabled = !sec.querySelectorAll('.opt[aria-pressed="true"]').length;
+      });
+      sec.appendChild(b);
+    });
+
+    if (p.allow_other) {
+      var wrap = document.createElement('div'); wrap.className='other';
+      var lb = document.createElement('label'); lb.setAttribute('for','other-'+p.id);
+      lb.textContent = 'Using something else? Type it here';
+      otherInput = document.createElement('input');
+      otherInput.id='other-'+p.id; otherInput.type='text'; otherInput.maxLength=40;
+      otherInput.autocomplete='off'; otherInput.placeholder='Name it';
+      otherInput.value = (mine[p.id] && mine[p.id].other) || '';
+      wrap.appendChild(lb); wrap.appendChild(otherInput);
+      sec.appendChild(wrap);
+    }
+
+    var submit = document.createElement('button');
+    submit.type='button'; submit.className='submit'; submit.textContent='Submit';
+    // Disabled until something is chosen: a Submit that can be pressed with no answer either
+    // records nothing or records a lie, and both are worse than a greyed-out button.
+    submit.disabled = !picked.length;
+    submit.addEventListener('click', function(){
+      var choice = [].slice.call(sec.querySelectorAll('.opt[aria-pressed="true"]'))
+                     .map(function(b){ return b.dataset.value; });
+      if (!choice.length) return;
+      var other = otherInput ? otherInput.value.trim().slice(0,40) : '';
+      submit.disabled = true; submit.textContent = 'Sending…';
+      api('/rest/v1/rpc/cast_vote', { method:'POST', body: JSON.stringify({
+        p_poll_id: p.id, p_device_id: DEVICE, p_choice: choice, p_other: other || null })
+      }).then(function(r){
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        rememberAnswer(p.id, choice, other);
+        submit.textContent = 'Counted';
+        /* Close the popup and land them back on the presentation. window.close() only works
+           on a window this script opened, which is exactly how the deck opens it. If the
+           browser refuses (some mobile browsers open a TAB and will not close it), say so
+           rather than leaving them staring at a dead button. */
+        setTimeout(function(){
+          window.close();
+          setTimeout(function(){
+            status.textContent = 'Counted. You can close this and go back to the presentation.';
+            submit.textContent = 'Done';
+          }, 400);
+        }, 350);
+      }).catch(function(){
+        submit.disabled = false; submit.textContent = 'Submit';
+        status.setAttribute('data-state','err');
+        status.textContent = 'Could not send — check your signal and press Submit again.';
+      });
+    });
+    sec.appendChild(submit);
+    sec.appendChild(status);
+    qs.appendChild(sec);
+    doneEl.hidden = true;
+  }
+
   function render(polls, activeId){
     qs.innerHTML = '';
     var mine = localAnswers();
@@ -226,6 +343,16 @@
        order the room genuinely heard them in — and everything already asked stays answerable
        underneath, because losing a vote to somebody looking up two seconds late would defeat
        the point of asking. */
+    if (POPUP) {
+      // The deck only offers the tap when the presenter has this poll live, so the popup
+      // trusts that and does not re-gate on asked_at — re-checking would make the popup open
+      // empty in the seconds before the phone's own poll catches up.
+      var one = polls.filter(function(p){ return p.id === ONLY; });
+      if (!one.length) { qs.innerHTML = ''; document.getElementById('wait').hidden = false; return; }
+      document.getElementById('wait').hidden = true;
+      renderOne(one[0], mine);
+      return;
+    }
     var asked = polls.filter(function(p){ return p.asked_at; });
     asked.sort(function(a,b){ return (b.asked_at || '').localeCompare(a.asked_at || ''); });
     var live = asked.filter(function(p){ return p.id === activeId; });
@@ -327,7 +454,7 @@
           } else {
             b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
           }
-          save();
+          if (!POPUP) save();   // popup commits on Submit, not on every tap
         });
         sec.appendChild(b);
       });

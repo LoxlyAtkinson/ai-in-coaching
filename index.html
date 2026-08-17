@@ -305,7 +305,21 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 .chip > *{position:relative;z-index:1}
 .chip .cn{margin-left:10px;font-variant-numeric:tabular-nums;opacity:.7;font-weight:400}
 
-@media print{.rm{display:none!important}}
+
+.roombar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;align-items:center;
+  gap:12px;width:100%;padding:14px clamp(16px,4vw,28px);border:0;border-top:2px solid var(--green);
+  background:var(--press);color:var(--bone);font:inherit;text-align:left;cursor:pointer;
+  -webkit-tap-highlight-color:transparent}
+.roombar .rbdot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:var(--green);
+  animation:rbp 2s ease-in-out infinite}
+.roombar .rbt{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.roombar .rbg{font-size:14px;opacity:.62;margin-left:auto;text-align:right;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46%}
+@keyframes rbp{0%,100%{opacity:.3;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+
+@media (max-width:700px){.roombar .rbg{display:none}.roombar .rbt{font-size:15px}}
+@media (prefers-reduced-motion:reduce){.roombar .rbdot{animation:none;opacity:.9}}
+@media print{.rm,.roombar{display:none!important}}
 
 
 .pending{display:inline-flex;align-items:center;gap:10px;border:1px dashed var(--newsprint);
@@ -2101,5 +2115,206 @@ window.__deck={get index(){return i;},show:show,screens:S,total:contentTotal,not
   setStep(v){step=Math.max(0,Math.min(maxStep(i),v));paintSteps();},
   openAll(){step=maxStep(i);paintSteps();}};
 </script>
-</body>
+<script>window.__ROOM__={"url": "https://ashhfzmoqpjiwvklzopx.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzaGhmem1vcXBqaXd2a2x6b3B4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTM3MjksImV4cCI6MjEwMjUyOTcyOX0.Ebjq-qw5NIN8QAgccJuJxaPLx66CJ_zy7x1B1k0E-pE"};</script><script>/* LIVE ROOM RESULTS — injected into the deck ONLY by `build-deck.py --live`.
+ *
+ * deck.html and the published index.html never contain this file. That separation is the
+ * point: the deck the talk actually depends on makes zero external requests and cannot be
+ * killed by a venue's wifi. This variant trades that guarantee for the room seeing its own
+ * answer on the slide, and it is used only when the network is known to be good.
+ *
+ * Every failure mode here degrades to "the slide looks exactly as designed":
+ *   - no config      -> nothing happens
+ *   - fetch fails    -> nothing is painted, nothing is emptied, the s03 chip still works
+ *   - poll has no
+ *     answers yet    -> the container stays display:none rather than showing an empty box
+ * A live layer that can leave a labelled empty rectangle on screen in front of a room is
+ * worse than no live layer.
+ */
+(function () {
+  'use strict';
+  var CFG = window.__ROOM__;
+  if (!CFG || !CFG.url || !CFG.anon) return;
+
+  function api(path, body) {
+    return fetch(CFG.url.replace(/\/$/, '') + path, {
+      method: body ? 'POST' : 'GET',
+      headers: {
+        'apikey': CFG.anon, 'Authorization': 'Bearer ' + CFG.anon,
+        'Content-Type': 'application/json'
+      },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (r) { return r.ok ? r.json() : null; });
+  }
+
+  var META = null;          // poll definitions, fetched once — options and labels do not move
+
+  function paintStrip(el, poll, counts, total) {
+    // No answers yet is NOT the same as a zero result. Leave the slide alone.
+    if (!total) { el.classList.remove('on'); el.innerHTML = ''; return; }
+
+    if (!el.firstChild) {
+      var h = document.createElement('div');
+      h.className = 'rmh';
+      h.textContent = 'This room, just now';
+      el.appendChild(h);
+      // Five or more options stacked single-file pushed s18 and s26 past the footer at 872px.
+      // Two columns fixes the overflow AND spends the empty right-hand third the audit keeps
+      // naming, instead of trading one defect for another.
+      var grid = document.createElement('div');
+      grid.className = 'rmg' + ((poll.options || []).length > 4 ? ' two' : '');
+      el.appendChild(grid);
+      (poll.options || []).forEach(function (o) {
+        var r = document.createElement('div'); r.className = 'rmr'; r.dataset.v = o.value;
+        var lab = document.createElement('div'); lab.textContent = o.label;
+        var tr = document.createElement('div'); tr.className = 'rmt';
+        var fi = document.createElement('div'); fi.className = 'rmf';
+        tr.appendChild(fi);
+        var n = document.createElement('div'); n.className = 'rmn';
+        r.appendChild(lab); r.appendChild(tr); r.appendChild(n);
+        grid.appendChild(r);
+      });
+      var c = document.createElement('div'); c.className = 'rmc';
+      el.appendChild(c);
+    }
+
+    (poll.options || []).forEach(function (o) {
+      var row = el.querySelector('.rmr[data-v="' + o.value + '"]');
+      if (!row) return;
+      var n = counts[o.value] || 0;
+      row.querySelector('.rmf').style.width = (total ? Math.round(n / total * 100) : 0) + '%';
+      row.querySelector('.rmn').textContent = n;
+    });
+    el.querySelector('.rmc').textContent =
+      total + (total === 1 ? ' person in this room answered' : ' people in this room answered');
+    el.classList.add('on');
+  }
+
+  function paintChips(host, counts, total) {
+    // s03: the chip the room was asked to press becomes the result, in place. No new height,
+    // no second component, and the offline behaviour of the chip is untouched.
+    if (!total) return;
+    [].forEach.call(host.querySelectorAll('.chip'), function (chip) {
+      var v = (chip.getAttribute('onclick') || '').match(/'(YES|NO)'/);
+      if (!v) return;
+      var n = counts[v[1].toLowerCase()] || 0;
+      var fill = chip.querySelector('.cf');
+      if (!fill) {
+        fill = document.createElement('span'); fill.className = 'cf';
+        chip.insertBefore(fill, chip.firstChild);
+      }
+      fill.style.width = Math.round(n / total * 100) + '%';
+      var num = chip.querySelector('.cn');
+      if (!num) { num = document.createElement('span'); num.className = 'cn'; chip.appendChild(num); }
+      num.textContent = n;
+    });
+  }
+
+  /* s29's closing line stops being an assertion the presenter seeded by tapping a chip and
+     becomes what the room actually said. The SHAPE, never the count — the script's own
+     direction is "read the shape aloud, do not tally precisely", and a number on that slide
+     would invite an argument about the denominator in the last minute of the talk. */
+  function paintEcho(counts, total) {
+    if (!total) return;
+    var no = counts['no'] || 0;
+    var share = no / total;
+    var shape = share >= 0.66 ? 'Most of you'
+              : share >= 0.34 ? 'About half of you'
+              : share > 0      ? 'A few of you'
+              : 'Almost none of you';
+    [].forEach.call(document.querySelectorAll('.pulse-echo'), function (e) {
+      e.textContent = shape;
+    });
+  }
+
+
+  /* ── THE AUDIENCE'S WAY IN ──────────────────────────────────────────────────────────────
+     The room does not get a separate URL. They open the presentation on their own phone, and
+     when the presenter releases a question a banner appears along the bottom. Tapping it opens
+     ONE question in a popup over the deck; they answer, press Submit, and it closes them back
+     onto the slide they were on.
+
+     The banner exists only while a question is live AND this device has not answered it. That
+     second condition is why the popup lives at the same origin as the deck: they share
+     localStorage, so the deck can read `roomAnswers` and stop nagging somebody who has already
+     voted. It also means the banner cannot be dismissed into a state where they lose the
+     chance to answer — clearing it is the presenter's job, not a close button's.
+
+     window.open() is called from inside the click handler, which is the only way a popup
+     blocker will allow it. On phones it opens as a tab rather than a window; that is fine,
+     because the popup closes itself on Submit. */
+  var banner = null;
+  function answeredLocally(id){
+    try { return !!(JSON.parse(localStorage.getItem('roomAnswers')||'{}')[id]); }
+    catch(e){ return false; }
+  }
+  function paintBanner(activeId, poll){
+    var want = !!activeId && !answeredLocally(activeId);
+    if (!want) { if (banner) { banner.remove(); banner = null; } return; }
+    if (banner && banner.dataset.poll === activeId) return;
+    if (banner) banner.remove();
+
+    banner = document.createElement('button');
+    banner.type = 'button';
+    banner.className = 'roombar';
+    banner.dataset.poll = activeId;
+    banner.innerHTML = '<span class="rbdot" aria-hidden="true"></span>' +
+                       '<span class="rbt">A question is open — tap to answer</span>' +
+                       '<span class="rbg">' + ((poll && poll.question) || '') + '</span>';
+    banner.addEventListener('click', function(){
+      var url = 'room/?popup=1&poll=' + encodeURIComponent(activeId);
+      var w = window.open(url, 'roomvote', 'width=430,height=720');
+      // Popup blocked (or a browser that refuses named windows) — never leave them stuck.
+      if (!w) window.location.href = url;
+    });
+    document.body.appendChild(banner);
+  }
+
+  function tick() {
+    var jobs = [api('/rest/v1/rpc/poll_results', {}), api('/rest/v1/rpc/poll_totals', {}),
+                api('/rest/v1/room_state?select=active_poll&id=eq.1')];
+    if (!META) jobs.push(api('/rest/v1/polls?select=id,question,options,kind&order=position.asc'));
+    else jobs.push(Promise.resolve(null));
+    Promise.all(jobs).then(function (res) {
+      var results = res[0], totals = res[1], state = res[2];
+      if (res[3]) META = res[3];
+      var activeId = (state && state[0]) ? state[0].active_poll : null;
+      if (!results || !totals || !META) return;
+
+      var byPoll = {}, totalBy = {};
+      results.forEach(function (r) {
+        (byPoll[r.poll_id] = byPoll[r.poll_id] || {})[r.choice] = r.votes;
+      });
+      totals.forEach(function (t) { totalBy[t.poll_id] = t.respondents; });
+
+      META.forEach(function (poll) {
+        var counts = byPoll[poll.id] || {}, total = totalBy[poll.id] || 0;
+        [].forEach.call(document.querySelectorAll('.rm[data-poll="' + poll.id + '"]'), function (el) {
+          paintStrip(el, poll, counts, total);
+        });
+        var chipHost = document.querySelector('.chips[data-poll="' + poll.id + '"]');
+        if (chipHost) paintChips(chipHost, counts, total);
+        if (poll.id === 'data-check') paintEcho(counts, total);
+      });
+
+      paintBanner(activeId, META.filter(function(p){ return p.id === activeId; })[0]);
+      fails = 0;               // a good read re-arms the fast cadence
+      schedule(FAST);
+    }).catch(function () {
+      /* Silent on screen: a wobble must not repaint the slide as an error.
+         But NOT silent on the wire. Blocking the endpoint and watching devtools showed 18
+         net::ERR_FAILED in six seconds, and a 40-minute talk on dead venue wifi would fire
+         roughly 600 doomed requests. After three consecutive failures the poll backs off to
+         SLOW; one success puts it straight back to FAST, so a wifi drop that heals mid-talk
+         recovers within one slow tick rather than staying degraded. */
+      fails++;
+      schedule(fails >= 3 ? SLOW : FAST);
+    });
+  }
+
+  var FAST = 4000, SLOW = 30000, fails = 0, timer = null;
+  function schedule(ms) { clearTimeout(timer); timer = setTimeout(tick, ms); }
+
+  tick();
+})();
+</script></body>
 </html>
