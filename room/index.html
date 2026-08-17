@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Room · Coaching AI Decision Workbench</title>
+<!--
+  THE ROOM'S PHONE PAGE. Deliberately a SEPARATE artifact from the deck.
+
+  deck.html and the published index.html assert "single self-contained file, zero external
+  requests", and publish.py refuses to ship a build that breaks it. That guarantee is why the
+  deck cannot fail on a venue's bad wifi. Live voting needs shared state across devices, which
+  needs a server, which needs a request. Putting that inside the deck would trade a talk that
+  cannot fail for one that can. So the network lives here, on the audience's phones, where a
+  failure costs one person their vote instead of costing the speaker their deck.
+
+  NO CDN, NO supabase-js, NO framework. Plain fetch against the REST endpoint. A CDN that does
+  not answer is a blank page in front of a room, and this project has already learned that once.
+
+  NO NAMES, NO EMAILS, NO IP. The only identifier is a random UUID this browser mints for
+  itself. See room/schema.sql for why that is a design position and not laziness.
+-->
+<style>
+  :root{
+    --bone:#fafffa; --press:#121613; --slate:#3f4a41; --line:rgba(18,22,19,.16);
+    --green:#2bee4b; --ok:#1c7a2e;
+    --pad:clamp(18px,5vw,28px);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bone); color:var(--press);
+    font:400 17px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:var(--pad) var(--pad) 64px;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:560px;margin:0 auto}
+
+  header{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:26px}
+  .tick{width:26px;height:3px;background:var(--green);margin-bottom:12px}
+  h1{font-size:21px;line-height:1.25;margin:0 0 6px;letter-spacing:-.01em}
+  .sub{font-size:14px;color:var(--slate);margin:0}
+
+  /* The privacy line is not boilerplate — it is the talk's own argument, demonstrated.
+     A room being asked to trust a data claim should be able to check the claim. */
+  .priv{margin-top:14px;font-size:13px;line-height:1.45;color:var(--slate);
+    border-left:2px solid var(--line);padding-left:12px}
+
+  .q{margin:0 0 34px}
+  .qt{font-size:18px;font-weight:600;line-height:1.35;margin:0 0 4px;letter-spacing:-.01em}
+  .qh{font-size:13px;color:var(--slate);margin:0 0 12px}
+
+  /* 56px minimum height: a thumb target in a dark room on a phone held at arm's length. */
+  .opt{
+    display:flex;align-items:center;gap:12px;width:100%;min-height:56px;
+    padding:12px 16px;margin:0 0 8px;text-align:left;
+    background:transparent;border:1px solid var(--line);border-radius:10px;
+    font:inherit;color:inherit;cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    transition:border-color .12s,background .12s;
+  }
+  .opt:active{background:rgba(18,22,19,.04)}
+  .opt:focus-visible{outline:2px solid var(--press);outline-offset:2px}
+  .box{
+    flex:0 0 auto;width:20px;height:20px;border:1.5px solid var(--slate);
+    display:grid;place-items:center;border-radius:4px;
+  }
+  .multi .box{border-radius:4px}
+  .single .box{border-radius:50%}
+  .opt[aria-pressed="true"]{border-color:var(--press);background:rgba(18,22,19,.05)}
+  .opt[aria-pressed="true"] .box{border-color:var(--press);background:var(--press)}
+  .opt[aria-pressed="true"] .box::after{content:"";width:8px;height:8px;background:var(--bone)}
+  .single .opt[aria-pressed="true"] .box::after{border-radius:50%}
+
+  .other{margin-top:10px}
+  .other input{
+    width:100%;min-height:52px;padding:12px 16px;border:1px solid var(--line);
+    border-radius:10px;font:inherit;color:inherit;background:transparent;
+  }
+  .other input:focus{outline:2px solid var(--press);outline-offset:2px}
+  .other label{display:block;font-size:13px;color:var(--slate);margin-bottom:6px}
+
+  .saved{font-size:13px;color:var(--ok);margin:8px 0 0;min-height:18px}
+  .saved[data-state="err"]{color:#a3261d}
+
+  .done{border-top:1px solid var(--line);padding-top:22px;margin-top:8px;font-size:15px}
+  .skel{height:56px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;opacity:.4}
+  .fail{border:1px solid #a3261d;border-radius:10px;padding:16px;font-size:15px}
+  .fail b{display:block;margin-bottom:6px}
+
+  @media (prefers-color-scheme:dark){
+    :root{--bone:#121613;--press:#eef2ee;--slate:#a8b3a9;--line:rgba(238,242,238,.18);--ok:#5fd97a}
+    .opt[aria-pressed="true"]{background:rgba(238,242,238,.08)}
+    .opt[aria-pressed="true"] .box::after{background:#121613}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="tick" aria-hidden="true"></div>
+    <h1>Coaching AI Decision Workbench</h1>
+    <p class="sub">Answer as we go. Your answers shape what is on the screen.</p>
+    <p class="priv">
+      Anonymous. No name, no email, no phone number, and your IP address is not stored.
+      This page gives your browser a random number so it can count you once, and that number
+      is not connected to anything about you. That is the whole point of the talk.
+    </p>
+  </header>
+
+  <main id="qs" aria-live="polite">
+    <div class="skel"></div><div class="skel"></div><div class="skel"></div>
+  </main>
+
+  <p class="done" id="done" hidden>Thank you — that is everything. Leave this page open;
+  more questions may appear as the talk goes on.</p>
+
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ── CONFIG ────────────────────────────────────────────────────────────────────────────
+     Fill these two in from Supabase → Project Settings → API.
+     The anon key is PUBLISHABLE by design: it is safe in client code precisely because
+     row-level security decides what it may do. schema.sql grants it insert + update on
+     votes and NO select at all, so this key cannot read anybody's answers, cannot list
+     device ids, and cannot see a single vote row — only the aggregate functions.
+     Never paste the SERVICE ROLE key here. That one bypasses RLS entirely. */
+  var SUPABASE_URL = window.ROOM_SUPABASE_URL || 'https://ashhfzmoqpjiwvklzopx.supabase.co';
+  var SUPABASE_ANON = window.ROOM_SUPABASE_ANON || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzaGhmem1vcXBqaXd2a2x6b3B4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTM3MjksImV4cCI6MjEwMjUyOTcyOX0.Ebjq-qw5NIN8QAgccJuJxaPLx66CJ_zy7x1B1k0E-pE';
+
+  var qs = document.getElementById('qs');
+  var doneEl = document.getElementById('done');
+
+  /* ── device identity ───────────────────────────────────────────────────────────────────
+     A random UUID, minted once, kept in localStorage. Not a fingerprint: it is not derived
+     from the device, the network, the screen, or anything else about the person. Clear your
+     browser data and you become a new voter — which is the honest limit of this method and
+     is exactly the limit every commercial polling tool has. */
+  var KEY = 'roomDeviceId';
+  function deviceId(){
+    var v = null;
+    try { v = localStorage.getItem(KEY); } catch(e){}
+    if (!v) {
+      v = (crypto && crypto.randomUUID) ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){
+            var r = Math.random()*16|0; return (c === 'x' ? r : (r&0x3|0x8)).toString(16);
+          });
+      try { localStorage.setItem(KEY, v); } catch(e){}
+    }
+    return v;
+  }
+  var DEVICE = deviceId();
+
+  /* Remember this device's own answers locally so re-opening the page shows them selected.
+     The database will not tell us — it has no select policy on votes, deliberately. */
+  function localAnswers(){
+    try { return JSON.parse(localStorage.getItem('roomAnswers') || '{}'); } catch(e){ return {}; }
+  }
+  function rememberAnswer(id, choice, other){
+    var a = localAnswers(); a[id] = {choice: choice, other: other || null};
+    try { localStorage.setItem('roomAnswers', JSON.stringify(a)); } catch(e){}
+  }
+
+  function api(path, opts){
+    opts = opts || {};
+    opts.headers = Object.assign({
+      'apikey': SUPABASE_ANON,
+      'Authorization': 'Bearer ' + SUPABASE_ANON,
+      'Content-Type': 'application/json'
+    }, opts.headers || {});
+    return fetch(SUPABASE_URL.replace(/\/$/,'') + path, opts);
+  }
+
+  function fail(msg, detail){
+    qs.innerHTML = '';
+    var d = document.createElement('div');
+    d.className = 'fail';
+    d.innerHTML = '<b>' + msg + '</b>';
+    d.appendChild(document.createTextNode(detail || ''));
+    qs.appendChild(d);
+  }
+
+  function render(polls){
+    qs.innerHTML = '';
+    var mine = localAnswers();
+
+    polls.forEach(function(p){
+      var picked = (mine[p.id] && mine[p.id].choice) || [];
+
+      var sec = document.createElement('section');
+      sec.className = 'q ' + p.kind;
+
+      var h = document.createElement('h2');
+      h.className = 'qt'; h.textContent = p.question;
+      sec.appendChild(h);
+
+      var hint = document.createElement('p');
+      hint.className = 'qh';
+      hint.textContent = p.kind === 'multi' ? 'Choose as many as apply.' : 'Choose one.';
+      sec.appendChild(hint);
+
+      var status = document.createElement('p');
+      status.className = 'saved';
+
+      var otherInput = null;
+
+      function currentChoice(){
+        return [].slice.call(sec.querySelectorAll('.opt[aria-pressed="true"]'))
+                 .map(function(b){ return b.dataset.value; });
+      }
+
+      function save(){
+        var choice = currentChoice();
+        if (!choice.length) { status.textContent = ''; return; }
+        var other = otherInput ? otherInput.value.trim().slice(0, 40) : '';
+        status.removeAttribute('data-state');
+        status.textContent = 'Saving…';
+        /* Writes go through cast_vote(), never straight at the table.
+           This started as a PostgREST upsert with Prefer: resolution=merge-duplicates, and it
+           failed with 42501. The reason is worth keeping: an upsert emits
+           INSERT … ON CONFLICT DO UPDATE, and Postgres needs a SELECT policy to read the
+           conflicting row before it can update it. schema.sql deliberately has no SELECT policy
+           on votes, so a plain insert returned 201 and the upsert returned 401 — first vote
+           fine, changing your mind broken.
+           Adding a SELECT policy would have fixed it by letting every visitor read every vote,
+           which is the exact property the design exists to protect. So the write moved into a
+           security-definer function instead: anon now holds NO insert, NO update and NO select
+           on votes, and the function validates that the choice is actually one of that poll's
+           options — which nothing was checking before. */
+        api('/rest/v1/rpc/cast_vote', {
+          method: 'POST',
+          body: JSON.stringify({
+            p_poll_id: p.id, p_device_id: DEVICE, p_choice: choice,
+            p_other: other || null
+          })
+        }).then(function(r){
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          status.textContent = 'Counted.';
+          rememberAnswer(p.id, choice, other);
+          checkDone(polls);
+        }).catch(function(e){
+          status.setAttribute('data-state','err');
+          status.textContent = 'Could not save — tap again when you have signal.';
+        });
+      }
+
+      (p.options || []).forEach(function(o){
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'opt';
+        b.dataset.value = o.value;
+        b.setAttribute('aria-pressed', picked.indexOf(o.value) > -1 ? 'true' : 'false');
+        var box = document.createElement('span'); box.className = 'box'; box.setAttribute('aria-hidden','true');
+        var lab = document.createElement('span'); lab.textContent = o.label;
+        b.appendChild(box); b.appendChild(lab);
+        b.addEventListener('click', function(){
+          if (p.kind === 'single') {
+            [].slice.call(sec.querySelectorAll('.opt')).forEach(function(x){
+              x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+            });
+          } else {
+            b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+          }
+          save();
+        });
+        sec.appendChild(b);
+      });
+
+      if (p.allow_other) {
+        var wrap = document.createElement('div'); wrap.className = 'other';
+        var lb = document.createElement('label');
+        lb.setAttribute('for', 'other-' + p.id);
+        lb.textContent = 'Something else? Name it (optional)';
+        otherInput = document.createElement('input');
+        otherInput.id = 'other-' + p.id;
+        otherInput.type = 'text';
+        otherInput.maxLength = 40;
+        otherInput.autocomplete = 'off';
+        otherInput.placeholder = 'e.g. a tool not listed';
+        otherInput.value = (mine[p.id] && mine[p.id].other) || '';
+        // Save on blur, not per keystroke — one row write per person, not thirty.
+        otherInput.addEventListener('blur', function(){ if (currentChoice().length) save(); });
+        wrap.appendChild(lb); wrap.appendChild(otherInput);
+        sec.appendChild(wrap);
+      }
+
+      sec.appendChild(status);
+      qs.appendChild(sec);
+    });
+
+    checkDone(polls);
+  }
+
+  function checkDone(polls){
+    var mine = localAnswers();
+    var all = polls.every(function(p){ return mine[p.id] && mine[p.id].choice.length; });
+    doneEl.hidden = !all;
+  }
+
+  if (!SUPABASE_URL || !SUPABASE_ANON) {
+    fail('Not configured yet.',
+      'Set window.ROOM_SUPABASE_URL and window.ROOM_SUPABASE_ANON before this script runs. ' +
+      'See room/README.md.');
+    return;
+  }
+
+  api('/rest/v1/polls?select=id,question,kind,options,allow_other&open=eq.true&order=position.asc')
+    .then(function(r){
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(polls){
+      if (!polls.length) { fail('No questions are open yet.', 'Keep this page open.'); return; }
+      render(polls);
+      // A question opened mid-talk should appear without anybody refreshing. Polling, not a
+      // websocket: a phone that sleeps and wakes reconnects a poll for free, and this costs
+      // one small request a minute per handset.
+      setInterval(function(){
+        api('/rest/v1/polls?select=id,question,kind,options,allow_other&open=eq.true&order=position.asc')
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(fresh){
+            if (!fresh) return;
+            var now = fresh.map(function(p){ return p.id; }).join(',');
+            if (now !== polls.map(function(p){ return p.id; }).join(',')) { polls = fresh; render(polls); }
+          }).catch(function(){});
+      }, 60000);
+    })
+    .catch(function(e){
+      fail('Could not reach the poll.',
+        'Check your connection and pull down to refresh. Your answers are saved on this ' +
+        'device and will send when you are back online.');
+    });
+})();
+</script>
+</body>
+</html>
