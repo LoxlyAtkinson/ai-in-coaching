@@ -84,6 +84,28 @@
   .saved{font-size:13px;color:var(--ok);margin:8px 0 0;min-height:18px}
   .saved[data-state="err"]{color:#a3261d}
 
+  /* THE LIVE QUESTION vs THE ONES ALREADY ASKED.
+     The current question is full size and carries the green mark. Earlier ones stay on the
+     page, quieter, so somebody who joined late or looked up too slowly can still answer —
+     losing votes to timing would defeat the point of asking the room at all. */
+  .q.live{border-left:3px solid var(--green);padding-left:16px;margin-left:-19px}
+  .q.past{opacity:.62}
+  .q.past .qt{font-size:16px}
+  .q.past .opt{min-height:46px;padding:8px 14px}
+  .now{display:inline-block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ok);font-weight:600;margin-bottom:6px}
+  .earlier{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);
+    border-top:1px solid var(--line);padding-top:18px;margin:34px 0 18px}
+
+  .wait{text-align:center;padding:56px 0 40px;color:var(--slate)}
+  .wait p{margin:0 0 6px;font-size:15px}
+  .wait b{color:var(--press);font-size:17px}
+  .pulse{width:10px;height:10px;border-radius:50%;background:var(--green);margin:0 auto 20px;
+    animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+  /* Reduced motion gets a steady dot, not a missing one — it still says "live and waiting". */
+  @media (prefers-reduced-motion:reduce){.pulse{animation:none;opacity:.9}}
+
   .done{border-top:1px solid var(--line);padding-top:22px;margin-top:8px;font-size:15px}
   .skel{height:56px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;opacity:.4}
   .fail{border:1px solid #a3261d;border-radius:10px;padding:16px;font-size:15px}
@@ -111,12 +133,19 @@
     </p>
   </header>
 
+  <!-- Shown while nothing is live. A blank screen reads as broken; this reads as waiting. -->
+  <div class="wait" id="wait" hidden>
+    <div class="pulse" aria-hidden="true"></div>
+    <p><b>Nothing to answer yet.</b></p>
+    <p>Keep this page open. The next question appears here when it comes up in the talk.</p>
+  </div>
+
   <main id="qs" aria-live="polite">
     <div class="skel"></div><div class="skel"></div><div class="skel"></div>
   </main>
 
-  <p class="done" id="done" hidden>Thank you — that is everything. Leave this page open;
-  more questions may appear as the talk goes on.</p>
+  <p class="done" id="done" hidden>Answered. The next question will appear here when we get
+  to it.</p>
 
 </div>
 
@@ -186,15 +215,47 @@
     qs.appendChild(d);
   }
 
-  function render(polls){
+  function render(polls, activeId){
     qs.innerHTML = '';
     var mine = localAnswers();
 
-    polls.forEach(function(p){
+    /* PRESENTER-PACED. The phone shows the question the talk has actually reached, not a form.
+       A form invites people to fill it in during the opening and then stop looking up; a
+       question that arrives on cue is part of the talk.
+       `asked_at` is stamped when the presenter releases a question, so ordering here is the
+       order the room genuinely heard them in — and everything already asked stays answerable
+       underneath, because losing a vote to somebody looking up two seconds late would defeat
+       the point of asking. */
+    var asked = polls.filter(function(p){ return p.asked_at; });
+    asked.sort(function(a,b){ return (b.asked_at || '').localeCompare(a.asked_at || ''); });
+    var live = asked.filter(function(p){ return p.id === activeId; });
+    var past = asked.filter(function(p){ return p.id !== activeId; });
+    var ordered = live.concat(past);
+
+    document.getElementById('wait').hidden = ordered.length > 0;
+    if (!ordered.length) { doneEl.hidden = true; return; }
+
+    ordered.forEach(function(p, idx){
       var picked = (mine[p.id] && mine[p.id].choice) || [];
 
+      var isLive = (p.id === activeId);
+
+      // One divider, before the first question that is no longer the live one.
+      if (!isLive && idx > 0 && ordered[idx - 1].id === activeId) {
+        var div = document.createElement('p');
+        div.className = 'earlier';
+        div.textContent = 'Earlier questions — still open if you missed one';
+        qs.appendChild(div);
+      }
+
       var sec = document.createElement('section');
-      sec.className = 'q ' + p.kind;
+      sec.className = 'q ' + p.kind + (isLive ? ' live' : ' past');
+
+      if (isLive) {
+        var now = document.createElement('span');
+        now.className = 'now'; now.textContent = 'Now';
+        sec.appendChild(now);
+      }
 
       var h = document.createElement('h2');
       h.className = 'qt'; h.textContent = p.question;
@@ -243,7 +304,7 @@
           if (!r.ok) throw new Error('HTTP ' + r.status);
           status.textContent = 'Counted.';
           rememberAnswer(p.id, choice, other);
-          checkDone(polls);
+          checkDone(ordered);
         }).catch(function(e){
           status.setAttribute('data-state','err');
           status.textContent = 'Could not save — tap again when you have signal.';
@@ -275,13 +336,13 @@
         var wrap = document.createElement('div'); wrap.className = 'other';
         var lb = document.createElement('label');
         lb.setAttribute('for', 'other-' + p.id);
-        lb.textContent = 'Something else? Name it (optional)';
+        lb.textContent = 'Using something else? Type it here';
         otherInput = document.createElement('input');
         otherInput.id = 'other-' + p.id;
         otherInput.type = 'text';
         otherInput.maxLength = 40;
         otherInput.autocomplete = 'off';
-        otherInput.placeholder = 'e.g. a tool not listed';
+        otherInput.placeholder = 'Name it';
         otherInput.value = (mine[p.id] && mine[p.id].other) || '';
         // Save on blur, not per keystroke — one row write per person, not thirty.
         otherInput.addEventListener('blur', function(){ if (currentChoice().length) save(); });
@@ -293,13 +354,16 @@
       qs.appendChild(sec);
     });
 
-    checkDone(polls);
+    checkDone(ordered);
   }
 
-  function checkDone(polls){
+  /* "Done" can only mean "answered everything asked SO FAR". The remaining questions have not
+     been put to the room yet, so counting them as outstanding would tell every person they are
+     behind for the whole talk. */
+  function checkDone(asked){
+    if (!asked.length) { doneEl.hidden = true; return; }
     var mine = localAnswers();
-    var all = polls.every(function(p){ return mine[p.id] && mine[p.id].choice.length; });
-    doneEl.hidden = !all;
+    doneEl.hidden = !asked.every(function(p){ return mine[p.id] && mine[p.id].choice.length; });
   }
 
   if (!SUPABASE_URL || !SUPABASE_ANON) {
@@ -309,32 +373,41 @@
     return;
   }
 
-  api('/rest/v1/polls?select=id,question,kind,options,allow_other&open=eq.true&order=position.asc')
-    .then(function(r){
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function(polls){
-      if (!polls.length) { fail('No questions are open yet.', 'Keep this page open.'); return; }
-      render(polls);
-      // A question opened mid-talk should appear without anybody refreshing. Polling, not a
-      // websocket: a phone that sleeps and wakes reconnects a poll for free, and this costs
-      // one small request a minute per handset.
-      setInterval(function(){
-        api('/rest/v1/polls?select=id,question,kind,options,allow_other&open=eq.true&order=position.asc')
-          .then(function(r){ return r.ok ? r.json() : null; })
-          .then(function(fresh){
-            if (!fresh) return;
-            var now = fresh.map(function(p){ return p.id; }).join(',');
-            if (now !== polls.map(function(p){ return p.id; }).join(',')) { polls = fresh; render(polls); }
-          }).catch(function(){});
-      }, 60000);
-    })
-    .catch(function(e){
-      fail('Could not reach the poll.',
-        'Check your connection and pull down to refresh. Your answers are saved on this ' +
-        'device and will send when you are back online.');
+  var POLLS = '/rest/v1/polls?select=id,question,kind,options,allow_other,asked_at' +
+              '&open=eq.true&order=position.asc';
+  var STATE = '/rest/v1/room_state?select=active_poll&id=eq.1';
+
+  var lastSig = null;
+
+  /* One tick = one read of "what has been asked" plus "what is live now". Four seconds,
+     because this has to feel like it is keeping up with a person talking — a question that
+     lands thirty seconds after the speaker asks it has already lost the room. Two tiny reads
+     per phone per four seconds is nothing; the whole payload is a handful of rows. */
+  function tick(first){
+    return Promise.all([
+      api(POLLS).then(function(r){ return r.ok ? r.json() : null; }),
+      api(STATE).then(function(r){ return r.ok ? r.json() : null; })
+    ]).then(function(both){
+      var polls = both[0], state = both[1];
+      if (!polls) throw new Error('polls unavailable');
+      var active = (state && state[0]) ? state[0].active_poll : null;
+
+      /* Re-render only when something actually changed. Rebuilding the DOM every four
+         seconds would blow away a half-typed free-text answer and fight the user's thumb. */
+      var sig = active + '|' + polls.map(function(p){ return p.id + ':' + (p.asked_at || ''); }).join(',');
+      if (sig !== lastSig) { lastSig = sig; render(polls, active); }
+    }).catch(function(e){
+      if (first) {
+        fail('Could not reach the poll.',
+          'Check your connection. Your answers are saved on this device and will send when ' +
+          'you are back online.');
+      }
+      /* A failed tick mid-talk is silent on purpose: the venue wifi wobbling for four seconds
+         must not replace a question the room is looking at with an error message. */
     });
+  }
+
+  tick(true).then(function(){ setInterval(function(){ tick(false); }, 4000); });
 })();
 </script>
 </body>

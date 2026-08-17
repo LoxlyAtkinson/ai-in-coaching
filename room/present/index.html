@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Presenter · Room</title>
+<!--
+  THE PRESENTER'S CONTROL. Open this on the speaking laptop, on a phone in your hand, or on a
+  second screen. It is the manual half of "auto with manual override": releasing a question is
+  one tap, and it works whether or not the deck itself is online.
+
+  It is deliberately NOT part of deck.html. The deck must keep its zero-external-requests
+  guarantee, and this page necessarily talks to a server. If the venue wifi dies you lose the
+  live poll and you keep the talk.
+
+  Guarded by a key. Without one, any phone that guessed this URL could drive the room.
+-->
+<style>
+  :root{--bg:#0f1310;--fg:#eef2ee;--dim:#93a094;--line:rgba(238,242,238,.16);
+        --green:#2bee4b;--warn:#ffb020}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);padding:20px 20px 60px;
+    font:400 16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:760px;margin:0 auto}
+  h1{font-size:18px;margin:0 0 2px;letter-spacing:-.01em}
+  .sub{color:var(--dim);font-size:13px;margin:0 0 22px}
+
+  .gate{max-width:340px}
+  .gate input{width:100%;min-height:52px;padding:12px 14px;border-radius:10px;
+    border:1px solid var(--line);background:transparent;color:inherit;font:inherit}
+  .gate button,.act{min-height:52px;padding:12px 20px;border-radius:10px;border:1px solid var(--line);
+    background:transparent;color:inherit;font:inherit;cursor:pointer}
+  .gate button{margin-top:10px;width:100%}
+
+  .row{display:flex;gap:12px;align-items:flex-start;border-top:1px solid var(--line);
+    padding:16px 0}
+  .row:first-of-type{border-top:0}
+  .meta{flex:1 1 auto;min-width:0}
+  .qn{font-size:15px;font-weight:600;margin:0 0 3px}
+  .slide{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+  .ask{flex:0 0 auto;min-width:126px;text-align:center;border-color:var(--dim)}
+  .ask.on{background:var(--green);color:#0f1310;border-color:var(--green);font-weight:600}
+  .ask.done{opacity:.5}
+
+  /* Results are bars, not numbers, because the presenter is reading this at a glance while
+     talking. A count you have to parse is a count you will not look at. */
+  .res{margin-top:10px}
+  .bar{display:grid;grid-template-columns:minmax(88px,150px) minmax(0,1fr) 44px;gap:10px;
+    align-items:center;font-size:13px;margin-bottom:5px}
+  .track{height:9px;background:rgba(238,242,238,.12);border-radius:5px;overflow:hidden}
+  .fill{height:100%;background:var(--green);border-radius:5px;transition:width .5s ease}
+  .n{text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
+  .tot{font-size:12px;color:var(--dim);margin:6px 0 0}
+  .free{font-size:12px;color:var(--warn);margin:8px 0 0}
+
+  .bar-wrap{margin-top:8px}
+  .tools{display:flex;gap:10px;margin-top:30px;border-top:1px solid var(--line);padding-top:20px;
+    flex-wrap:wrap}
+  .msg{font-size:13px;color:var(--dim);margin-top:12px;min-height:18px}
+  .msg[data-e]{color:#ff7a6b}
+  code{background:rgba(238,242,238,.1);padding:2px 6px;border-radius:4px;font-size:13px}
+  @media (prefers-reduced-motion:reduce){.fill{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Presenter control</h1>
+  <p class="sub">Release a question when you reach its slide. The room's phones follow within
+  four seconds.</p>
+
+  <div class="gate" id="gate">
+    <label for="k" style="display:block;font-size:13px;color:var(--dim);margin-bottom:6px">
+      Presenter key</label>
+    <input id="k" type="password" autocomplete="off" placeholder="key">
+    <button id="go" type="button">Unlock</button>
+    <p class="msg" id="gmsg"></p>
+  </div>
+
+  <div id="panel" hidden>
+    <div id="rows"></div>
+    <div class="tools">
+      <button class="act" id="clear" type="button">Clear the live question</button>
+      <button class="act" id="reset" type="button">Reset everything (wipes votes)</button>
+    </div>
+    <p class="msg" id="msg"></p>
+    <p class="sub" style="margin-top:22px">Room page:
+      <code>loxlyatkinson.github.io/ai-in-coaching/room/</code></p>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var URL_  = window.ROOM_SUPABASE_URL  || 'https://ashhfzmoqpjiwvklzopx.supabase.co';
+  var ANON  = window.ROOM_SUPABASE_ANON || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzaGhmem1vcXBqaXd2a2x6b3B4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTM3MjksImV4cCI6MjEwMjUyOTcyOX0.Ebjq-qw5NIN8QAgccJuJxaPLx66CJ_zy7x1B1k0E-pE';
+  var KEYLS = 'roomPresenterKey';
+  var key = null, polls = [], active = null;
+
+  var gate=document.getElementById('gate'), panel=document.getElementById('panel'),
+      rows=document.getElementById('rows'), msg=document.getElementById('msg'),
+      gmsg=document.getElementById('gmsg');
+
+  function api(path, opts){
+    opts = opts || {};
+    opts.headers = Object.assign({'apikey':ANON,'Authorization':'Bearer '+ANON,
+      'Content-Type':'application/json'}, opts.headers||{});
+    return fetch(URL_.replace(/\/$/,'') + path, opts);
+  }
+  function say(t, err){ msg.textContent = t || ''; if (err) msg.setAttribute('data-e','1');
+                        else msg.removeAttribute('data-e'); }
+
+  function rpc(fn, body){
+    return api('/rest/v1/rpc/'+fn, {method:'POST', body: JSON.stringify(body)})
+      .then(function(r){ return r.text().then(function(t){
+        if (!r.ok) throw new Error(t || ('HTTP '+r.status));
+        return t ? JSON.parse(t) : null; }); });
+  }
+
+  function unlock(){
+    var v = document.getElementById('k').value.trim();
+    if (!v) return;
+    // Prove the key by using it, rather than by asking the server "is this right?" — there is
+    // no endpoint that answers that, and there should not be one.
+    rpc('set_active_poll', {p_poll_id:null, p_key:v}).then(function(){
+      key = v; try{ localStorage.setItem(KEYLS, v); }catch(e){}
+      gate.hidden = true; panel.hidden = false; loop();
+    }).catch(function(){ gmsg.textContent = 'That key was not accepted.';
+                         gmsg.setAttribute('data-e','1'); });
+  }
+  document.getElementById('go').addEventListener('click', unlock);
+  document.getElementById('k').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') unlock(); });
+
+  function ask(id){
+    say('Releasing…');
+    rpc('set_active_poll', {p_poll_id:id, p_key:key})
+      .then(function(){ say('Live: ' + id); refresh(); })
+      .catch(function(e){ say('Failed: ' + e.message, true); });
+  }
+
+  function draw(results, totals){
+    rows.innerHTML = '';
+    var rMap = {}, tMap = {};
+    (results||[]).forEach(function(r){ (rMap[r.poll_id] = rMap[r.poll_id] || {})[r.choice] = r.votes; });
+    (totals||[]).forEach(function(t){ tMap[t.poll_id] = t.respondents; });
+
+    polls.forEach(function(p){
+      var row = document.createElement('div'); row.className = 'row';
+
+      var meta = document.createElement('div'); meta.className = 'meta';
+      var qn = document.createElement('p'); qn.className='qn'; qn.textContent = p.question;
+      var sl = document.createElement('div'); sl.className='slide';
+      sl.textContent = (p.slide_id ? p.slide_id.toUpperCase() + ' · ' : '') +
+                       (p.kind === 'multi' ? 'choose many' : 'choose one') +
+                       (p.asked_at ? ' · asked' : '');
+      meta.appendChild(qn); meta.appendChild(sl);
+
+      var counts = rMap[p.id] || {}, total = tMap[p.id] || 0;
+      var wrap = document.createElement('div'); wrap.className='res';
+      (p.options||[]).forEach(function(o){
+        var n = counts[o.value] || 0;
+        var pct = total ? Math.round(n/total*100) : 0;
+        var b = document.createElement('div'); b.className='bar';
+        var lab = document.createElement('div'); lab.textContent = o.label;
+        var tr = document.createElement('div'); tr.className='track';
+        var fi = document.createElement('div'); fi.className='fill'; fi.style.width = pct+'%';
+        tr.appendChild(fi);
+        var nn = document.createElement('div'); nn.className='n'; nn.textContent = n;
+        b.appendChild(lab); b.appendChild(tr); b.appendChild(nn);
+        wrap.appendChild(b);
+      });
+      var tot = document.createElement('p'); tot.className='tot';
+      tot.textContent = total + (total === 1 ? ' person' : ' people') + ' answered';
+      wrap.appendChild(tot);
+
+      if (p.allow_other) {
+        var f = document.createElement('p'); f.className='free';
+        f.textContent = 'Free-text answers are collected but not shown here — read them after.';
+        wrap.appendChild(f);
+      }
+      meta.appendChild(wrap);
+
+      var btn = document.createElement('button');
+      btn.type='button';
+      btn.className = 'act ask' + (p.id === active ? ' on' : (p.asked_at ? ' done' : ''));
+      btn.textContent = p.id === active ? 'LIVE NOW' : (p.asked_at ? 'Ask again' : 'Ask this');
+      btn.addEventListener('click', function(){ ask(p.id); });
+
+      row.appendChild(meta); row.appendChild(btn);
+      rows.appendChild(row);
+    });
+  }
+
+  function refresh(){
+    return Promise.all([
+      api('/rest/v1/polls?select=id,question,kind,options,allow_other,asked_at,slide_id&order=position.asc')
+        .then(function(r){ return r.ok ? r.json() : []; }),
+      api('/rest/v1/room_state?select=active_poll&id=eq.1')
+        .then(function(r){ return r.ok ? r.json() : []; }),
+      rpc('poll_results', {}).catch(function(){ return []; }),
+      rpc('poll_totals', {}).catch(function(){ return []; })
+    ]).then(function(a){
+      polls = a[0]; active = (a[1] && a[1][0]) ? a[1][0].active_poll : null;
+      draw(a[2], a[3]);
+    });
+  }
+  function loop(){ refresh(); setInterval(refresh, 4000); }
+
+  document.getElementById('clear').addEventListener('click', function(){
+    rpc('set_active_poll', {p_poll_id:null, p_key:key})
+      .then(function(){ say('Nothing is live. Phones show the waiting state.'); refresh(); })
+      .catch(function(e){ say('Failed: '+e.message, true); });
+  });
+
+  document.getElementById('reset').addEventListener('click', function(){
+    // Destructive and irreversible, so it asks. A mis-tap here mid-talk would delete the
+    // room's answers with no way back.
+    if (!window.confirm('Delete every vote and un-ask every question?\n\nUse this between runs, not during one.')) return;
+    rpc('reset_room', {p_key:key})
+      .then(function(){ say('Reset. No votes, nothing asked.'); refresh(); })
+      .catch(function(e){ say('Failed: '+e.message, true); });
+  });
+
+  // Coming back after a reload should not mean re-typing the key mid-talk.
+  try {
+    var saved = localStorage.getItem(KEYLS);
+    if (saved) { document.getElementById('k').value = saved; unlock(); }
+  } catch(e){}
+})();
+</script>
+</body>
+</html>
