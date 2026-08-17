@@ -804,11 +804,8 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
     <h2 class="rv" style="margin:14px auto 0;max-width:22ch"><span>Have you checked whether</span></h2>
     <h2 class="rv"><span>your AI provider learns</span></h2>
     <h2 class="rv"><span>from what you type?</span></h2>
-    <div class="chips st st1" data-poll="data-check" style="justify-content:center">
-      
-      <button type="button" class="chip" aria-pressed="false" onclick="pulse(this,'YES')">Yes</button>
-      <button type="button" class="chip" aria-pressed="false" onclick="pulse(this,'NO')">No</button>
-    </div>
+    
+    <div class="rm" data-poll="data-check"></div>
     
     <p class="b st st2" style="margin:22px auto 0;text-align:center">One word — out loud, or in the chat. <span id="roomAnswer"></span></p>
     <p class="b st st2" style="margin:12px auto 0;text-align:center;font-size:var(--t-md);color:var(--newsprint)">Not whether it remembers your chats. Whether it learns from them.</p>
@@ -2014,11 +2011,26 @@ function presHTML(){
     '#scr{margin-top:20px;font-size:25px;line-height:1.62;white-space:pre-wrap;color:#F2F0EA}'+
     '#nxt{margin-top:26px;padding-top:15px;border-top:1px solid rgba(242,240,234,.16);font-size:15px;color:#B9B4A6;cursor:pointer}'+
     '#nxt b{display:block;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#8C877A;margin-bottom:5px}'+
+    
+    '#poll:empty{display:none}'+
+    '#poll{margin-top:26px;padding-top:16px;border-top:1px solid rgba(242,240,234,.16)}'+
+    '#poll h3{margin:0 0 10px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#8C877A;font-weight:600}'+
+    '#poll .pr{display:flex;gap:12px;align-items:center;padding:9px 0;border-top:1px solid rgba(242,240,234,.1)}'+
+    '#poll .pr:first-of-type{border-top:0}'+
+    '#poll .ps{flex:0 0 auto;min-width:44px;font-size:12px;letter-spacing:.1em;color:#8C877A}'+
+    '#poll .pq{flex:1 1 auto;font-size:15px;color:#F2F0EA}'+
+    '#poll .pc{flex:0 0 auto;font-size:12px;color:#8C877A;font-variant-numeric:tabular-nums;min-width:64px;text-align:right}'+
+    '#poll button{flex:0 0 auto;min-width:104px;padding:9px 14px;border-radius:7px;cursor:pointer;'+
+      'border:1px solid #6E6A5E;background:transparent;color:#F2F0EA;font:inherit;font-size:14px}'+
+    '#poll button.on{background:#2bee4b;border-color:#2bee4b;color:#14140F;font-weight:700}'+
+    '#poll button.cur{border-color:#93b799;color:#EAF7EC}'+
+    '#poll .pm{margin-top:12px;font-size:13px;color:#8C877A;min-height:17px}'+
     '</style></head><body><div id="w"><div id="hd"><div id="num"></div>'+
     '<div id="lab"></div><div id="prog"><div id="bar"></div></div><div id="chk"></div>'+
     '<div id="stp"></div></div>'+
     '<div id="dir"></div><div id="scr"></div>'+
-    '<div id="nxt"><b>Next</b><span id="nxtv"></span></div></div></body></html>';
+    '<div id="nxt"><b>Next</b><span id="nxtv"></span></div>'+
+    '<div id="poll"></div></div></body></html>';
 }
 function openPresenter(){
   if(presWin&&!presWin.closed){presWin.focus();paintPresenter();return;}
@@ -2112,6 +2124,7 @@ window.__deck={get index(){return i;},show:show,screens:S,total:contentTotal,not
   /* Raise every reveal on the current screen. Used by the proof screenshots, which
      must show the finished slide, and by the word-ceiling check, which must count
      gated text — it is text the room will see, so it spends the budget. */
+  get presenterWindow(){return (presWin&&!presWin.closed)?presWin:null;},
   setStep(v){step=Math.max(0,Math.min(maxStep(i),v));paintSteps();},
   openAll(){step=maxStep(i);paintSteps();}};
 </script>
@@ -2269,10 +2282,11 @@ window.__deck={get index(){return i;},show:show,screens:S,total:contentTotal,not
     document.body.appendChild(banner);
   }
 
+
   function tick() {
     var jobs = [api('/rest/v1/rpc/poll_results', {}), api('/rest/v1/rpc/poll_totals', {}),
                 api('/rest/v1/room_state?select=active_poll&id=eq.1')];
-    if (!META) jobs.push(api('/rest/v1/polls?select=id,question,options,kind&order=position.asc'));
+    if (!META) jobs.push(api('/rest/v1/polls?select=id,question,options,kind,slide_id&order=position.asc'));
     else jobs.push(Promise.resolve(null));
     Promise.all(jobs).then(function (res) {
       var results = res[0], totals = res[1], state = res[2];
@@ -2297,6 +2311,13 @@ window.__deck={get index(){return i;},show:show,screens:S,total:contentTotal,not
       });
 
       paintBanner(activeId, META.filter(function(p){ return p.id === activeId; })[0]);
+      // The presenter panel is a SEPARATE file that is not shipped to the audience. If it is
+      // present it registers itself here; if it is not, this is a no-op. That split is enforced
+      // rather than trusted: publish.py refuses to push an index.html containing
+      // the presenter's release RPC by name, and it caught exactly this when the panel
+      // lived in one file. Do not name that RPC in this file — the guard is a substring
+      // check and weakening it to allow a comment would defeat its purpose.
+      if (window.__ROOM_PRESENTER__) window.__ROOM_PRESENTER__(META, activeId, totalBy);
       fails = 0;               // a good read re-arms the fast cadence
       schedule(FAST);
     }).catch(function () {
@@ -2314,6 +2335,7 @@ window.__deck={get index(){return i;},show:show,screens:S,total:contentTotal,not
   var FAST = 4000, SLOW = 30000, fails = 0, timer = null;
   function schedule(ms) { clearTimeout(timer); timer = setTimeout(tick, ms); }
 
+  window.__ROOM_TICK__ = tick;
   tick();
 })();
 </script></body>

@@ -37,7 +37,9 @@
     padding:16px 0}
   .row:first-of-type{border-top:0}
   .meta{flex:1 1 auto;min-width:0}
-  .qn{font-size:15px;font-weight:600;margin:0 0 3px}
+  .qn{font-size:15px;font-weight:600;margin:0 0 3px;display:flex;gap:10px;align-items:baseline}
+  .sn{flex:0 0 auto;font-size:12px;font-weight:700;letter-spacing:.08em;color:#14140F;
+    background:var(--green);border-radius:4px;padding:2px 7px}
   .slide{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
   .ask{flex:0 0 auto;min-width:126px;text-align:center;border-color:var(--dim)}
   .ask.on{background:var(--green);color:#0f1310;border-color:var(--green);font-weight:600}
@@ -149,10 +151,16 @@
       var row = document.createElement('div'); row.className = 'row';
 
       var meta = document.createElement('div'); meta.className = 'meta';
-      var qn = document.createElement('p'); qn.className='qn'; qn.textContent = p.question;
+      // The slide number sits ON the question line, not in the small print under it. While
+      // presenting you are matching "which question belongs to the slide I am on", and a label
+      // you have to look down for is a label you will not read.
+      var qn = document.createElement('p'); qn.className='qn';
+      var badge = document.createElement('span'); badge.className='sn';
+      badge.textContent = (p.slide_id || '--').toUpperCase();
+      qn.appendChild(badge);
+      qn.appendChild(document.createTextNode(p.question));
       var sl = document.createElement('div'); sl.className='slide';
-      sl.textContent = (p.slide_id ? p.slide_id.toUpperCase() + ' · ' : '') +
-                       (p.kind === 'multi' ? 'choose many' : 'choose one') +
+      sl.textContent = (p.kind === 'multi' ? 'choose many' : 'choose one') +
                        (p.asked_at ? ' · asked' : '');
       meta.appendChild(qn); meta.appendChild(sl);
 
