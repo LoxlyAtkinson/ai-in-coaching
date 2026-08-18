@@ -331,6 +331,16 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 .roombar:hover .rbcta{filter:brightness(1.08)}
 .roombar:active{transform:translateY(1px)}
 .roombar:focus-visible{outline:3px solid var(--green);outline-offset:-3px}
+
+.roombar.done{border-top-color:rgba(43,238,75,.42);box-shadow:0 -10px 26px rgba(0,0,0,.20)}
+.roombar.done::before{display:none}
+.roombar.done .rbdot{animation:none;background:transparent;position:relative;width:15px;height:15px}
+.roombar.done .rbdot::after{content:"";position:absolute;left:3px;top:0;width:6px;height:11px;
+  border:solid var(--green);border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.roombar.done .rbt{font-weight:600;opacity:.92}
+.roombar.done .rbcta{background:transparent;color:var(--bone);opacity:.72;font-weight:600;
+  border:1px solid rgba(250,255,250,.34);animation:none;padding:9px 18px}
+.roombar.done:hover .rbcta{opacity:1}
 @keyframes rbin{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes rbsweep{0%{transform:translateX(-40%)}55%,100%{transform:translateX(340%)}}
 @keyframes rbp{0%,100%{opacity:.35;transform:scale(.82);box-shadow:0 0 0 0 rgba(43,238,75,.5)}
@@ -2185,8 +2195,17 @@ window.__deck={get index(){return i;},show:show,screens:S,total:contentTotal,not
       // Five or more options stacked single-file pushed s18 and s26 past the footer at 872px.
       // Two columns fixes the overflow AND spends the empty right-hand third the audit keeps
       // naming, instead of trading one defect for another.
+      //
+      // THRESHOLD LOWERED 4 -> 2 on 2026-08-18. Adding the "Something else" option the owner
+      // asked for gave data-check a THIRD row, and s03 measured 797px against the 773px gate
+      // with the strip POPULATED — 24px over, so on the day, with real votes in, s03 would have
+      // clipped. Caught only because G-POPULATED forces the measurement with live data; the
+      // empty state passed cleanly, exactly as it did the last time this trap was sprung.
+      // Two columns buys a whole row back without shrinking any type — TYP-01 exists because
+      // this deck was already too small to read from the back of a room, so type was never a
+      // lever. Also folds training-aware's four rows to two.
       var grid = document.createElement('div');
-      grid.className = 'rmg' + ((poll.options || []).length > 4 ? ' two' : '');
+      grid.className = 'rmg' + ((poll.options || []).length > 2 ? ' two' : '');
       el.appendChild(grid);
       (poll.options || []).forEach(function (o) {
         var r = document.createElement('div'); r.className = 'rmr'; r.dataset.v = o.value;
@@ -2285,23 +2304,45 @@ window.__deck={get index(){return i;},show:show,screens:S,total:contentTotal,not
       if (banner) { banner.remove(); banner = null; }
       return;
     }
-    var want = !!activeId && !answeredLocally(activeId);
-    if (!want) { if (banner) { banner.remove(); banner = null; } return; }
-    if (banner && banner.dataset.poll === activeId) return;
+    /* ANSWERED IS A STATE THE DEVICE SHOWS, NOT A SILENCE.
+       This used to read `!!activeId && !answeredLocally(activeId)` and REMOVE the banner once
+       you had voted. The intent was right — do not nag somebody who already answered — but the
+       execution left the phone showing nothing at all, and nothing is indistinguishable from
+       broken. The owner hit exactly this on their own phone: a question was genuinely live, the
+       server was healthy, and their screen said nothing, so they reported the popup as not
+       working. It was working as written; the design was the defect.
+       The owner's requirement: "This device answered — then mark it somehow ... so the user can
+       see what he has and has not answered yet on that specific device." The device identity
+       (roomDeviceId) and the per-question record (roomAnswers) both already existed. What was
+       missing was the only part the person can actually see. Same shape as the s29 pulse-echo
+       bug this deck already documents: the feature was complete and rendered to nothing.
+       So the banner now has TWO live states. Unanswered nags. Answered confirms, quietly, and
+       still opens the popup — which restores their selection and shows the room's tally, so
+       "what did I say?" is answerable without re-voting. */
+    if (!activeId) { if (banner) { banner.remove(); banner = null; } return; }
+    var answered = answeredLocally(activeId);
+    /* The signature MUST include the answered flag. Keying the don't-rebuild cache on the poll
+       id alone would mean voting never repaints the strip — the same class of bug as the
+       dataset.sig cache that left the presenter's control permanently empty in Session 11. */
+    var sig = activeId + '|' + (answered ? 'done' : 'open');
+    if (banner && banner.dataset.sig === sig) return;
     if (banner) banner.remove();
 
     banner = document.createElement('button');
     banner.type = 'button';
-    banner.className = 'roombar';
+    banner.className = 'roombar' + (answered ? ' done' : '');
     banner.dataset.poll = activeId;
+    banner.dataset.sig = sig;
     /* The CTA pill is the only element that looks pressable; the dot and the question text are
        context. The whole strip stays the hit area — a room on phones should not have to aim. */
     banner.innerHTML = '<span class="rbdot" aria-hidden="true"></span>' +
-                       '<span class="rbt">A question is open</span>' +
+                       '<span class="rbt">' + (answered ? 'Answered' : 'A question is open') + '</span>' +
                        '<span class="rbg">' + ((poll && poll.question) || '') + '</span>' +
-                       '<span class="rbcta" aria-hidden="true">Answer now →</span>';
-    banner.setAttribute('aria-label',
-      'A question is open. Answer now: ' + ((poll && poll.question) || ''));
+                       '<span class="rbcta" aria-hidden="true">' +
+                         (answered ? 'See the room' : 'Answer now →') + '</span>';
+    banner.setAttribute('aria-label', answered
+      ? 'You have answered this question. Tap to see your answer and the room’s: ' + ((poll && poll.question) || '')
+      : 'A question is open. Answer now: ' + ((poll && poll.question) || ''));
     banner.addEventListener('click', function(){
       var url = 'room/?popup=1&poll=' + encodeURIComponent(activeId);
       var w = window.open(url, 'roomvote', 'width=430,height=720');
