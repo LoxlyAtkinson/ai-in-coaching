@@ -126,6 +126,8 @@
   body.popup .q.live{border-left:0;padding-left:0;margin-left:0}
 
   .done{border-top:1px solid var(--line);padding-top:22px;margin-top:8px;font-size:15px}
+  /* Popup-only footer. Hidden on the standing page, which carries the full privacy block. */
+  .pfoot{display:none}
   .skel{height:56px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;opacity:.4}
   .fail{border:1px solid #a3261d;border-radius:10px;padding:16px;font-size:15px}
   .fail b{display:block;margin-bottom:6px}
@@ -135,7 +137,212 @@
     .opt[aria-pressed="true"]{background:rgba(238,242,238,.08)}
     .opt[aria-pressed="true"] .box::after{background:#121613}
   }
-  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  /* ── ENTRANCE AND FEEDBACK ────────────────────────────────────────────────────────────────
+     This opens over a talk, in a dark room, on a phone somebody has just picked up. It should
+     arrive like something that was waiting for them rather than a page that happened to load,
+     and every tap should answer back immediately — on a phone with no hover state, the press
+     IS the only feedback there is.
+     All of it is layered on top of a page that already works: remove every rule below and the
+     popup still renders, still selects, still submits. */
+  .wrap{animation:vin .42s cubic-bezier(.2,.9,.3,1.02) both}
+  @keyframes vin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  /* Options arrive in sequence so the eye is walked down the list instead of dropped into it.
+     Capped at six: past that the stagger stops being rhythm and starts being a wait. */
+  .q.live .opt{animation:vopt .34s ease-out both}
+  .q.live .opt:nth-of-type(1){animation-delay:.06s}
+  .q.live .opt:nth-of-type(2){animation-delay:.11s}
+  .q.live .opt:nth-of-type(3){animation-delay:.16s}
+  .q.live .opt:nth-of-type(4){animation-delay:.21s}
+  .q.live .opt:nth-of-type(5){animation-delay:.26s}
+  .q.live .opt:nth-of-type(n+6){animation-delay:.30s}
+  @keyframes vopt{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+
+  .opt{transition:border-color .14s,background .14s,transform .11s}
+  .opt:active{transform:scale(.985)}
+  /* The check mark grows into place, so a selection registers even at a glance. */
+  .opt .box::after{transition:transform .16s cubic-bezier(.2,1.5,.4,1)}
+  .opt[aria-pressed="true"] .box::after{animation:vpop .22s cubic-bezier(.2,1.6,.4,1) both}
+  @keyframes vpop{from{transform:scale(0)}to{transform:scale(1)}}
+
+  /* Submit earns a little weight once it is actually usable — a disabled button that looks
+     identical to an enabled one is why people press it and nothing happens. */
+  .submit{transition:transform .12s,box-shadow .18s,opacity .18s}
+  .submit:not(:disabled){box-shadow:0 6px 18px rgba(18,22,19,.22)}
+  .submit:not(:disabled):active{transform:translateY(1px) scale(.995)}
+  .submit.sent{background:var(--ok);border-color:var(--ok);animation:vsent .4s ease-out both}
+  @keyframes vsent{0%{transform:scale(1)}45%{transform:scale(1.02)}100%{transform:scale(1)}}
+
+  .saved{transition:opacity .2s}
+  .saved:not(:empty){animation:vfade .28s ease-out both}
+  @keyframes vfade{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+
+  /* ── THE POPUP, REDESIGNED ────────────────────────────────────────────────────────────
+     The brief, given twice: "make the Pop-up prominant, beautiful with Animations", then
+     "I didnt say banner though I said popup - I said beautiful, I said prominent".
+     What was actually wrong, measured off popup-before.png at 430x720: every element sat in
+     the top ~370px, ~350px of dead space underneath, the question set at 18px in system sans,
+     options drawn as thin hairline outlines, and a grey slab Submit. Nothing in the frame said
+     which talk it belonged to.
+
+     Three faults, three fixes:
+       1. IT DID NOT FILL THE FRAME — the popup is now a flex column at full viewport height:
+          the question block grows, Submit is anchored to the floor, the dead space is gone.
+       2. IT HAD NO VOICE — the question moves to the deck's own display stack, verbatim:
+          --display:'Instrument Serif',Georgia,'Times New Roman',serif. Two different things
+          happen at the two ends of the room, and both are wanted. On the presenting laptop
+          Instrument Serif is INSTALLED — verify-deck-pdf.py finds InstrumentSerif-Regular and
+          InstrumentSerif-Italic embedded in the 37-page archive — so the popup and the
+          projected deck are set in the same face. On the audience's phones there is no
+          webfont to fetch (deck-shell.html declares no @font-face, and fetching one would
+          break the venue-wifi guarantee this whole file exists to protect), so it degrades to
+          Georgia: still a serif, still unmistakably not the system sans it replaced.
+       3. NOTHING HAD WEIGHT — options become filled surfaces at 68px, and Submit ARMS: hollow
+          while nothing is chosen, deck-green the instant it can be pressed. The state change
+          carries the affordance, which is also the fix for the grey slab.
+
+     Green is spent on Submit deliberately. deck-shell.html rations #2bee4b to THE ONE ACTION
+     and nothing else; in this window Submit is the only action there is. The header keeps no
+     green at all, so the one green thing on screen is the thing to press.
+
+     Scoped entirely to body.popup. vote.html is also served as a full standing page carrying
+     every question at once, and none of this may reach it. */
+  body.popup{
+    --pop-face:'Instrument Serif',Georgia,'Times New Roman',serif;
+    --pop-mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --pop-surf:rgba(18,22,19,.062);
+    --pop-edge:rgba(18,22,19,.15);
+    --pop-ink2:#3e4d42;
+    --pop-ease:cubic-bezier(.22,.61,.36,1);
+
+    min-height:100vh; min-height:100dvh;
+    display:flex; flex-direction:column;
+    padding:24px 22px 20px;
+  }
+  body.popup .wrap{display:flex;flex-direction:column;flex:1;width:100%;max-width:460px}
+  body.popup #qs{display:flex;flex-direction:column;flex:1}
+  /* .q.live is the growing element — it owns the space between the eyebrow and the floor. */
+  body.popup .q.live{display:flex;flex-direction:column;flex:1}
+
+  /* The eyebrow states which talk this is and then gets out of the way. The green tick is
+     retired here: at 26x3px it read as a stray rule, and green is owed to Submit. */
+  body.popup header{margin-bottom:24px;animation:vin .42s var(--pop-ease) both}
+  body.popup .tick{display:none}
+  body.popup h1{
+    font-family:var(--pop-mono);font-size:11px;font-weight:500;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--pop-ink2);
+    opacity:1;margin:0;
+  }
+
+  /* THE QUESTION IS THE HERO. Serif, large, tight — the deck's voice, not a form label. */
+  body.popup .qt{
+    font-family:var(--pop-face);font-weight:400;
+    font-size:clamp(30px,8.2vw,38px);line-height:1.08;letter-spacing:-.02em;
+    margin:0 0 12px;
+    animation:vin .46s .04s var(--pop-ease) both;
+  }
+  body.popup .qh{
+    font-family:var(--pop-mono);font-size:11px;font-weight:500;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--pop-ink2);
+    margin:0 0 24px;
+  }
+
+  /* Options with a body to them: a filled surface a thumb can aim at in a dark room.
+     THEY GROW. Anchoring Submit to the floor without this just moved the dead space instead
+     of removing it — measured at 430x720 with the two-option s03 question, it left a 161px
+     void between the last option and the button, which reads as the page running out rather
+     than as deliberate spacing. Letting the options absorb the slack closes it to ~40px.
+     The 128px cap is what keeps a two-option question from becoming two absurd slabs; with
+     five options the cap never binds and they sit at their natural height. */
+  body.popup .opt{
+    flex:1 1 auto;max-height:128px;
+    min-height:60px;padding:14px 18px;margin:0 0 9px;gap:14px;
+    border:1px solid var(--pop-edge);border-radius:14px;background:var(--pop-surf);
+    font-size:19px;letter-spacing:-.01em;
+  }
+  body.popup .opt .box{width:22px;height:22px;border-width:1.5px}
+  body.popup .opt[aria-pressed="true"]{
+    border-color:var(--press);background:rgba(18,22,19,.09);
+    box-shadow:inset 0 0 0 1px var(--press);
+  }
+
+  /* SUBMIT ARMS. Hollow while nothing is chosen; green, weighted and lifted the moment it
+     can be pressed. margin-top:auto pins it to the floor and kills the dead space.
+
+     AND IT NEVER LEAVES THE SCREEN. Measured worst-first across all five questions at
+     430x720: dictation (six options plus a free-text field) overflowed the frame by 172px,
+     ai-tool and ai-writing by 84px each — which put Submit BELOW THE FOLD on three of the
+     five. Session 11 fixed precisely this bug on the presenter's side, where a control sat
+     851px under the fold and 52 passing assertions never saw it; shipping the same fault to
+     the audience's phone would be that mistake facing the other way. No option height that
+     is still a humane thumb target makes six options plus a text field fit, so the fix is
+     structural rather than dimensional: sticky keeps margin-top:auto's floor behaviour for
+     the short questions and guarantees the action stays on screen for the long ones.
+     The bone halo is what stops options scrolling visibly under a transparent button. */
+  body.popup .submit{
+    position:sticky;bottom:18px;z-index:2;
+    margin-top:auto;min-height:64px;border-radius:14px;
+    font-size:18px;font-weight:600;letter-spacing:-.01em;
+    background:var(--green);border:1px solid var(--green);color:#0d120e;
+    box-shadow:0 0 0 14px var(--bone),0 10px 26px rgba(43,238,75,.30);
+    transition:background .28s var(--pop-ease),box-shadow .28s var(--pop-ease),
+               border-color .28s var(--pop-ease),color .2s,transform .12s;
+  }
+  /* Full opacity, no fill. A ghosted grey slab reads as broken; an outline reads as waiting. */
+  body.popup .submit:disabled{
+    opacity:1;background:var(--bone);border-color:var(--pop-edge);color:var(--pop-ink2);
+    box-shadow:0 0 0 14px var(--bone);
+  }
+  body.popup .submit:not(:disabled):active{transform:translateY(1px) scale(.995)}
+
+  /* THE TYPED ANSWER IS AN OPTION, SO IT LOOKS LIKE ONE. Left on the base styles it rendered
+     as a bare label over a hairline input beneath a column of filled cards — visibly not part
+     of the list it belongs to. Same surface, same radius, same focus ring as a chosen option,
+     so "Something else" and the box you type it into read as one control. */
+  body.popup .other{
+    margin:0 0 9px;padding:12px 18px 13px;
+    border:1px solid var(--pop-edge);border-radius:14px;background:var(--pop-surf);
+    transition:border-color .14s,box-shadow .14s,background .14s;
+  }
+  body.popup .other label{
+    display:block;margin:0 0 4px;font-family:var(--pop-mono);font-size:10.5px;font-weight:500;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--pop-ink2);
+  }
+  body.popup .other input{
+    width:100%;min-height:32px;padding:0;border:0;border-radius:0;background:transparent;
+    font-size:19px;letter-spacing:-.01em;color:inherit;
+  }
+  body.popup .other input:focus,body.popup .other input:focus-visible{outline:0}
+  body.popup .other:focus-within{
+    border-color:var(--press);background:rgba(18,22,19,.09);
+    box-shadow:inset 0 0 0 1px var(--press);
+  }
+  @media (prefers-color-scheme:dark){
+    body.popup .other:focus-within{background:rgba(238,242,238,.11)}
+  }
+
+  /* One line, in the talk's own words, holding the base of the frame. The four-line privacy
+     block stays hidden — this says the same thing at the size a footer deserves. */
+  body.popup .pfoot{
+    display:block;margin:14px 0 0;font-family:var(--pop-mono);
+    font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--pop-ink2);opacity:.75;text-align:center;
+    animation:vin .5s .18s var(--pop-ease) both;
+  }
+
+  @media (prefers-color-scheme:dark){
+    body.popup{--pop-surf:rgba(238,242,238,.06);--pop-edge:rgba(238,242,238,.16);--pop-ink2:#a8b3a9}
+    body.popup .opt[aria-pressed="true"]{background:rgba(238,242,238,.11)}
+  }
+
+  /* Reduced motion removes the movement and keeps every element, its colour and its state.
+     Nothing below is load-bearing for understanding the page. */
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important}
+    .wrap,.q.live .opt,.opt[aria-pressed="true"] .box::after,.submit.sent,.saved:not(:empty),
+    body.popup header,body.popup .qt,body.popup .pfoot{
+      animation:none!important}
+  }
 </style>
 </head>
 <body>
@@ -165,6 +372,11 @@
 
   <p class="done" id="done" hidden>Answered. The next question will appear here when we get
   to it.</p>
+
+  <!-- Popup only (display:none until body.popup). The standing page carries the full privacy
+       block in the header and does not need this; the popup hides that block for space, so
+       this one line keeps the claim on screen where the answer is actually given. -->
+  <p class="pfoot">Anonymous · counted once · no name, no email</p>
 
 </div>
 
@@ -276,6 +488,11 @@
           b.setAttribute('aria-pressed', b.getAttribute('aria-pressed')==='true' ? 'false' : 'true');
         }
         submit.disabled = !sec.querySelectorAll('.opt[aria-pressed="true"]').length;
+        /* Picking "Something else" puts the cursor where the answer has to be typed.
+           Without this the option selects, Submit arms, and the person sends an empty
+           'other' without ever noticing the field below it. */
+        if (otherInput && b.dataset.value === 'other' &&
+            b.getAttribute('aria-pressed') === 'true') otherInput.focus();
       });
       sec.appendChild(b);
     });
@@ -283,11 +500,28 @@
     if (p.allow_other) {
       var wrap = document.createElement('div'); wrap.className='other';
       var lb = document.createElement('label'); lb.setAttribute('for','other-'+p.id);
-      lb.textContent = 'Using something else? Type it here';
+      lb.textContent = 'Something else — type it here';
       otherInput = document.createElement('input');
       otherInput.id='other-'+p.id; otherInput.type='text'; otherInput.maxLength=40;
       otherInput.autocomplete='off'; otherInput.placeholder='Name it';
       otherInput.value = (mine[p.id] && mine[p.id].other) || '';
+      /* TYPING IS ITSELF AN ANSWER. cast_vote refuses a vote whose choice is not a declared
+         option of the poll, so free text can only reach the server riding on the 'other'
+         value. Typing therefore SELECTS that option — otherwise a person types their answer,
+         finds Submit still dead, and concludes the popup is broken. The reverse direction
+         (select -> focus) is handled in the option handler above. */
+      otherInput.addEventListener('input', function(){
+        var ob = sec.querySelector('.opt[data-value="other"]');
+        if (ob && otherInput.value.trim()) {
+          if (p.kind === 'single') {
+            [].slice.call(sec.querySelectorAll('.opt')).forEach(function(x){
+              x.setAttribute('aria-pressed', x === ob ? 'true' : 'false'); });
+          } else {
+            ob.setAttribute('aria-pressed','true');
+          }
+        }
+        submit.disabled = !sec.querySelectorAll('.opt[aria-pressed="true"]').length;
+      });
       wrap.appendChild(lb); wrap.appendChild(otherInput);
       sec.appendChild(wrap);
     }
@@ -308,7 +542,11 @@
       }).then(function(r){
         if (!r.ok) throw new Error('HTTP ' + r.status);
         rememberAnswer(p.id, choice, other);
-        submit.textContent = 'Counted';
+        submit.textContent = 'Counted ✓';
+        /* Turn the button green on success. It is the last thing they look at before the popup
+           closes itself, and on a phone in a dark room a colour change carries further than a
+           word does. Purely additive: the text already says it. */
+        submit.classList.add('sent');
         /* Close the popup and land them back on the presentation. window.close() only works
            on a window this script opened, which is exactly how the deck opens it. If the
            browser refuses (some mobile browsers open a TAB and will not close it), say so

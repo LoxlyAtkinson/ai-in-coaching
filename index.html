@@ -306,19 +306,44 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 .chip .cn{margin-left:10px;font-variant-numeric:tabular-nums;opacity:.7;font-weight:400}
 
 
-.roombar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;align-items:center;
-  gap:12px;width:100%;padding:14px clamp(16px,4vw,28px);border:0;border-top:2px solid var(--green);
-  background:var(--press);color:var(--bone);font:inherit;text-align:left;cursor:pointer;
-  -webkit-tap-highlight-color:transparent}
-.roombar .rbdot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:var(--green);
-  animation:rbp 2s ease-in-out infinite}
-.roombar .rbt{font-size:16px;font-weight:600;letter-spacing:-.01em}
-.roombar .rbg{font-size:14px;opacity:.62;margin-left:auto;text-align:right;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46%}
-@keyframes rbp{0%,100%{opacity:.3;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
 
-@media (max-width:700px){.roombar .rbg{display:none}.roombar .rbt{font-size:15px}}
-@media (prefers-reduced-motion:reduce){.roombar .rbdot{animation:none;opacity:.9}}
+.roombar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;align-items:center;
+  gap:clamp(10px,2vw,18px);width:100%;overflow:hidden;
+  padding:clamp(15px,2.2vw,21px) clamp(16px,4vw,32px);
+  border:0;border-top:3px solid var(--green);
+  background:var(--press);color:var(--bone);font:inherit;text-align:left;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  box-shadow:0 -16px 38px rgba(0,0,0,.26);
+  animation:rbin .5s cubic-bezier(.2,.9,.3,1.05) both}
+
+.roombar::before{content:"";position:absolute;left:0;top:-3px;height:3px;width:34%;
+  background:linear-gradient(90deg,transparent,#ffffff,transparent);opacity:.8;
+  animation:rbsweep 3.4s ease-in-out infinite;pointer-events:none}
+.roombar .rbdot{flex:0 0 auto;width:11px;height:11px;border-radius:50%;background:var(--green);
+  animation:rbp 2s ease-in-out infinite}
+.roombar .rbt{font-size:clamp(16px,1.5vw,19px);font-weight:700;letter-spacing:-.01em}
+.roombar .rbg{font-size:14px;opacity:.58;text-align:left;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:38%}
+
+.roombar .rbcta{margin-left:auto;flex:0 0 auto;background:var(--green);color:#0b1a0e;
+  font-weight:700;font-size:clamp(14px,1.3vw,16px);padding:11px 22px;border-radius:999px;
+  white-space:nowrap;animation:rbbreathe 2.6s ease-in-out infinite}
+.roombar:hover .rbcta{filter:brightness(1.08)}
+.roombar:active{transform:translateY(1px)}
+.roombar:focus-visible{outline:3px solid var(--green);outline-offset:-3px}
+@keyframes rbin{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes rbsweep{0%{transform:translateX(-40%)}55%,100%{transform:translateX(340%)}}
+@keyframes rbp{0%,100%{opacity:.35;transform:scale(.82);box-shadow:0 0 0 0 rgba(43,238,75,.5)}
+  50%{opacity:1;transform:scale(1);box-shadow:0 0 0 7px rgba(43,238,75,0)}}
+@keyframes rbbreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+
+@media (max-width:700px){.roombar .rbg{display:none}.roombar .rbt{font-size:15px}
+  .roombar .rbcta{padding:10px 18px}}
+
+@media (prefers-reduced-motion:reduce){
+  .roombar,.roombar .rbdot,.roombar .rbcta{animation:none}
+  .roombar::before{display:none}
+  .roombar .rbdot{opacity:.95}}
 @media print{.rm,.roombar{display:none!important}}
 
 
@@ -2012,25 +2037,12 @@ function presHTML(){
     '#nxt{margin-top:26px;padding-top:15px;border-top:1px solid rgba(242,240,234,.16);font-size:15px;color:#B9B4A6;cursor:pointer}'+
     '#nxt b{display:block;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#8C877A;margin-bottom:5px}'+
     
-    '#poll:empty{display:none}'+
-    '#poll{margin-top:26px;padding-top:16px;border-top:1px solid rgba(242,240,234,.16)}'+
-    '#poll h3{margin:0 0 10px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#8C877A;font-weight:600}'+
-    '#poll .pr{display:flex;gap:12px;align-items:center;padding:9px 0;border-top:1px solid rgba(242,240,234,.1)}'+
-    '#poll .pr:first-of-type{border-top:0}'+
-    '#poll .ps{flex:0 0 auto;min-width:44px;font-size:12px;letter-spacing:.1em;color:#8C877A}'+
-    '#poll .pq{flex:1 1 auto;font-size:15px;color:#F2F0EA}'+
-    '#poll .pc{flex:0 0 auto;font-size:12px;color:#8C877A;font-variant-numeric:tabular-nums;min-width:64px;text-align:right}'+
-    '#poll button{flex:0 0 auto;min-width:104px;padding:9px 14px;border-radius:7px;cursor:pointer;'+
-      'border:1px solid #6E6A5E;background:transparent;color:#F2F0EA;font:inherit;font-size:14px}'+
-    '#poll button.on{background:#2bee4b;border-color:#2bee4b;color:#14140F;font-weight:700}'+
-    '#poll button.cur{border-color:#93b799;color:#EAF7EC}'+
-    '#poll .pm{margin-top:12px;font-size:13px;color:#8C877A;min-height:17px}'+
     '</style></head><body><div id="w"><div id="hd"><div id="num"></div>'+
     '<div id="lab"></div><div id="prog"><div id="bar"></div></div><div id="chk"></div>'+
     '<div id="stp"></div></div>'+
     '<div id="dir"></div><div id="scr"></div>'+
     '<div id="nxt"><b>Next</b><span id="nxtv"></span></div>'+
-    '<div id="poll"></div></div></body></html>';
+    '</div></body></html>';
 }
 function openPresenter(){
   if(presWin&&!presWin.closed){presWin.focus();paintPresenter();return;}
@@ -2261,6 +2273,18 @@ window.__deck={get index(){return i;},show:show,screens:S,total:contentTotal,not
     catch(e){ return false; }
   }
   function paintBanner(activeId, poll){
+    /* NEVER on the presenter's own deck. This file ships to BOTH builds — the presenter's
+       --live copy and the audience's --public-live copy — so without this check the projected
+       screen grows an "Answer now" prompt aimed at a room that cannot tap it, while the one
+       person who can tap it is the one person not answering. Worse, a room looking at a
+       projected "tap to answer" reasonably concludes the screen is the thing to tap.
+       The presenter build is the only one that also loads the presenter controls, so its
+       registered global is the signal. It is set by a later <script> in the same document and
+       this runs after a network round trip, so it is always defined by the time we get here. */
+    if (window.__ROOM_PRESENTER__) {
+      if (banner) { banner.remove(); banner = null; }
+      return;
+    }
     var want = !!activeId && !answeredLocally(activeId);
     if (!want) { if (banner) { banner.remove(); banner = null; } return; }
     if (banner && banner.dataset.poll === activeId) return;
@@ -2270,9 +2294,14 @@ window.__deck={get index(){return i;},show:show,screens:S,total:contentTotal,not
     banner.type = 'button';
     banner.className = 'roombar';
     banner.dataset.poll = activeId;
+    /* The CTA pill is the only element that looks pressable; the dot and the question text are
+       context. The whole strip stays the hit area — a room on phones should not have to aim. */
     banner.innerHTML = '<span class="rbdot" aria-hidden="true"></span>' +
-                       '<span class="rbt">A question is open — tap to answer</span>' +
-                       '<span class="rbg">' + ((poll && poll.question) || '') + '</span>';
+                       '<span class="rbt">A question is open</span>' +
+                       '<span class="rbg">' + ((poll && poll.question) || '') + '</span>' +
+                       '<span class="rbcta" aria-hidden="true">Answer now →</span>';
+    banner.setAttribute('aria-label',
+      'A question is open. Answer now: ' + ((poll && poll.question) || ''));
     banner.addEventListener('click', function(){
       var url = 'room/?popup=1&poll=' + encodeURIComponent(activeId);
       var w = window.open(url, 'roomvote', 'width=430,height=720');
