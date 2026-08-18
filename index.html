@@ -524,6 +524,10 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 .logos .st{transform:scale(.8)}
 .on .logos .st{transform:none}
 
+.lgn{font-variant-numeric:tabular-nums;font-weight:600;color:var(--press);margin-left:4px}
+
+@media print{.lgn{display:none!important}.lg[data-added]{display:none!important}}
+
 
 .pg{flex:none;width:72px;height:44px}
 
@@ -830,11 +834,12 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
     
     <p class="b st st1" style="margin:18px auto 0;text-align:center;color:var(--newsprint)">Whichever you use:</p>
     
-    <div class="logos">
-      <div class="lg st st1"><svg class="mk" aria-hidden="true"><use href="#mk-openai"/></svg>ChatGPT</div>
-      <div class="lg st st2">Copilot</div>
-      <div class="lg st st3"><svg class="mk" aria-hidden="true"><use href="#mk-gemini"/></svg>Gemini</div>
-      <div class="lg st st4"><svg class="mk" aria-hidden="true"><use href="#mk-claude"/></svg>Claude</div>
+    
+    <div class="logos" data-poll="ai-tool">
+      <div class="lg st st1" data-v="chatgpt"><svg class="mk" aria-hidden="true"><use href="#mk-openai"/></svg>ChatGPT</div>
+      <div class="lg st st2" data-v="copilot">Copilot</div>
+      <div class="lg st st3" data-v="gemini"><svg class="mk" aria-hidden="true"><use href="#mk-gemini"/></svg>Gemini</div>
+      <div class="lg st st4" data-v="claude"><svg class="mk" aria-hidden="true"><use href="#mk-claude"/></svg>Claude</div>
     </div>
     <h2 class="rv" style="margin:14px auto 0;max-width:22ch"><span>Have you checked whether</span></h2>
     <h2 class="rv"><span>your AI provider learns</span></h2>
@@ -2235,6 +2240,38 @@ window.__deck={get index(){return i;},show:show,screens:S,total:contentTotal,not
     el.classList.add('on');
   }
 
+  /* THE VENDOR ROW AS A RESULT DISPLAY.
+     s03 carries two questions and can only afford one strip (758px against a 773px gate; a
+     strip costs ~200px). The second question asks which of the marks already on that row the
+     room uses, so the answer goes ON the marks — measured at 0px of added height, one row.
+     Degrades all the way back: no votes, no counts, no injected chips, row exactly as authored. */
+  function paintLogos(host, poll, counts, total) {
+    if (!total) {
+      [].forEach.call(host.querySelectorAll('.lgn'), function (n) { n.remove(); });
+      [].forEach.call(host.querySelectorAll('.lg[data-added]'), function (c) { c.remove(); });
+      return;
+    }
+    (poll.options || []).forEach(function (o) {
+      var chip = host.querySelector('.lg[data-v="' + o.value + '"]');
+      var n = counts[o.value] || 0;
+      if (!chip) {
+        /* An option with no mark of its own (Perplexity, Something else, I do not use one)
+           earns a chip only once somebody picks it. Rendering all seven up front would put
+           "I do not use one" on the slide before a single person had answered. */
+        if (!n) return;
+        chip = document.createElement('div');
+        chip.className = 'lg';
+        chip.dataset.v = o.value;
+        chip.dataset.added = '1';
+        chip.textContent = o.label;
+        host.appendChild(chip);
+      }
+      var num = chip.querySelector('.lgn');
+      if (!num) { num = document.createElement('span'); num.className = 'lgn'; chip.appendChild(num); }
+      num.textContent = n;
+    });
+  }
+
   function paintChips(host, counts, total) {
     // s03: the chip the room was asked to press becomes the result, in place. No new height,
     // no second component, and the offline behaviour of the chip is untouched.
@@ -2379,6 +2416,8 @@ window.__deck={get index(){return i;},show:show,screens:S,total:contentTotal,not
         });
         var chipHost = document.querySelector('.chips[data-poll="' + poll.id + '"]');
         if (chipHost) paintChips(chipHost, counts, total);
+        [].forEach.call(document.querySelectorAll('.logos[data-poll="' + poll.id + '"]'),
+          function (lh) { paintLogos(lh, poll, counts, total); });
         if (poll.id === 'data-check') paintEcho(counts, total);
       });
 
