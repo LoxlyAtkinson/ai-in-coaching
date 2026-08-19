@@ -75,8 +75,9 @@ body{
     var(--bg-field) right center/cover no-repeat;
 }
 
-.in > .pv:not(:has(.gone,.cmp,.bars,.rub,.tags,.tm,.split,.chk,.path,.fit,.rw,.ladder,.logos,.chips)),
-.in > .card:not(:has(.gone,.cmp,.bars,.rub,.tags,.tm,.split,.chk,.path,.fit,.rw,.ladder,.logos,.chips)){
+
+.in > .pv:not(:has(.gone,.cmp,.bars,.tags,.tm,.split,.chk,.path,.fit,.rw,.ladder,.logos,.chips)),
+.in > .card:not(:has(.gone,.cmp,.bars,.tags,.tm,.split,.chk,.path,.fit,.rw,.ladder,.logos,.chips)){
   width:fit-content;max-width:min(100%,80ch)}
 
 
@@ -150,7 +151,7 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 .card.lead{padding-left:24px}
 
 
-.val,.rung .name,.rung .what,.link .n,.src,.src-live,.chip,#count,.printnum,
+.val,.rung .name,.rung .what,.link .n,.src,.src-live,#count,.printnum,
 .mx .q .t,.pending,p.b,.what,.t{font-variant-numeric:tabular-nums}
 
 
@@ -274,13 +275,9 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 .bar.q .bt > i{background:var(--newsprint)}
 .bar.q .bv{color:var(--newsprint)}
 
+.bar.no .bt > i{background:transparent;box-shadow:inset 0 0 0 1.5px var(--newsprint)}
 
-.chips{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
-.chip{border:1px solid rgba(18,22,19,.28);padding:14px 22px;font-size:18px;font-weight:500;
-  letter-spacing:-.01em;cursor:pointer;transition:border-color .25s var(--ease);
-  font-family:inherit;color:inherit;background:transparent}
-.chip:hover{border-color:var(--press)}
-.chip.picked{border-left:3px solid var(--press);border-color:var(--press);font-weight:600}
+
 
 
 .rm{display:none}
@@ -299,11 +296,6 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
 .rm .rmc{font-size:var(--t-sm);color:var(--newsprint);opacity:.72;margin-top:8px}
 
 
-.chip{position:relative;overflow:hidden}
-.chip .cf{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(18,22,19,.13);
-  transition:width .55s var(--ease);z-index:0;pointer-events:none}
-.chip > *{position:relative;z-index:1}
-.chip .cn{margin-left:10px;font-variant-numeric:tabular-nums;opacity:.7;font-weight:400}
 
 
 
@@ -424,7 +416,8 @@ em{font-family:var(--display);font-style:italic;font-size:1.06em;color:var(--new
   .rub .vg{width:12px;height:12px}
 }
 
-.rub .vg{width:16px;height:16px}
+
+.rub .vg{width:21px;height:21px}
 
 
 .tags{margin-top:10px}
@@ -951,7 +944,7 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
         
         <div class="bars eq">
           <div class="bar"><div class="bl">Human</div><div class="bt"><i style="--w:100%"></i></div><div class="bv">Helped</div></div>
-          <div class="bar q"><div class="bl">AI</div><div class="bt"><i style="--w:5%"></i></div><div class="bv">Did not</div></div>
+          <div class="bar q no"><div class="bl">AI</div><div class="bt"><i style="--w:100%"></i></div><div class="bv">Did not</div></div>
         </div>
       </div>
     
@@ -1085,9 +1078,9 @@ body.on-demo .meta,body.on-demo .hint{mix-blend-mode:normal;color:rgba(250,255,2
         <div class="lbl">Protected by default?</div>
         <p class="b">Business: no training by default. Consumer: you must opt out.</p>
         
-        <div class="bars">
+        <div class="bars eq">
           <div class="bar"><div class="bl">Commercial</div><div class="bt"><i style="--w:100%"></i></div><div class="bv">Yes</div></div>
-          <div class="bar q"><div class="bl">Consumer</div><div class="bt"><i style="--w:5%"></i></div><div class="bv">No</div></div>
+          <div class="bar q no"><div class="bl">Consumer</div><div class="bt"><i style="--w:100%"></i></div><div class="bv">No</div></div>
         </div>
         <div class="src">Plan rules change; verify before buying.</div>
       </div>
@@ -1960,18 +1953,21 @@ function paintPulse(v){
   const ra=document.getElementById('roomAnswer');
   if(ra) ra.textContent=v?('— mostly '+v.toLowerCase()):'';
 }
-function pulse(el,v){
-  el.parentNode.querySelectorAll('.chip').forEach(c=>{
-    c.classList.remove('picked');c.setAttribute('aria-pressed','false');});
-  el.classList.add('picked');el.setAttribute('aria-pressed','true');
-  try{sessionStorage.setItem('roomPulse',v);}catch(e){}
-  paintPulse(v);
-}
+/* pulse(el,v) WAS HERE AND IS DELETED — T29, 2026-08-18.
+   It moved the `.picked` state between s03's Yes/No chips before calling paintPulse. Its only
+   caller was setPulse(), and only on the branch that first FOUND a chip — and `.chip` has
+   occurred ZERO times in every build since Session 10 deleted those chips on purpose. So the
+   function was unreachable, and setPulse has been taking its `else paintPulse(v)` fallback on
+   every press for eight sessions. Deleting it changes no runtime behaviour: what ran before is
+   exactly what runs now. The presenter's manual Y/N fallback is untouched and still works —
+   the slide source records that it deliberately "moved into the presenter view" with the chips. */
 try{paintPulse(sessionStorage.getItem('roomPulse'));}catch(e){paintPulse(null);}
-function cp(el){
-  navigator.clipboard?.writeText(el.dataset.cp).catch(()=>{});
-  el.classList.add('done');setTimeout(()=>el.classList.remove('done'),800);
-}
+/* cp(el) WAS HERE AND IS DELETED — T29, 2026-08-18.
+   A copy-to-clipboard helper reading `el.dataset.cp`. It had ZERO call sites and `[data-cp]`
+   occurred ZERO times across the deck source and all three built decks — nothing
+   could ever invoke it and it had nothing to copy. Unlike the three chip mechanisms this is
+   NOT fallout from the Session 10 deletion; it is an independent fifth instance of the same
+   shape, and it is the one the sweep found that no session had noticed. */
 document.addEventListener('click',e=>{
   const s=e.target.closest('.sw');if(!s)return;
   s.classList.add('rp');
@@ -1999,7 +1995,7 @@ document.addEventListener('click',e=>{
 let lastScroll=0;
 document.addEventListener('scroll',()=>{lastScroll=Date.now();},true);
 document.addEventListener('click',e=>{
-  if(e.target.closest('button,a[href],input,select,textarea,label,[onclick],.chip,.dot,.zone,.sw,#grid'))return;
+  if(e.target.closest('button,a[href],input,select,textarea,label,[onclick],.dot,.zone,.sw,#grid'))return;
   if(grid.classList.contains('on'))return;
   if(Date.now()-lastScroll<400)return;
   const sel=window.getSelection&&window.getSelection();
@@ -2104,10 +2100,21 @@ function paintPresenter(){
 }
 window.addEventListener('beforeunload',()=>{if(presWin&&!presWin.closed)presWin.close();});
 
+/* The presenter's manual Y/N fallback for s03, kept when the chips went. It used to look for
+   a chip to highlight and fall back to paintPulse if it found none; since Session 10 there has
+   never been a chip, so the fallback WAS the behaviour and the lookup was ceremony. T29
+   (2026-08-18) removed the dead branch.
+
+   ONE DELIBERATE BEHAVIOUR CHANGE, stated rather than smuggled: the sessionStorage write moves
+   here. It used to live in pulse(), on the unreachable branch, which left the reader four lines
+   above — `paintPulse(sessionStorage.getItem('roomPulse'))` on load — with NO writer anywhere in
+   the deck. A read with no write is the same defect this sweep exists to find, so removing the
+   dead branch without moving the write would have traded one dead mechanism for another. With
+   the write here, the s03 answer survives a reload, which is what the restore line was always
+   for. Everything the room sees on first press is unchanged. */
 function setPulse(v){
-  const chip=[...document.querySelectorAll('#stage [data-id="s03"] .chip')]
-    .find(c=>c.textContent.trim().toUpperCase()===v);
-  if(chip) pulse(chip,v); else paintPulse(v);
+  try{sessionStorage.setItem('roomPulse',v);}catch(e){}
+  paintPulse(v);
 }
 function handleKey(e){
   const k=e.key.toLowerCase();
@@ -2272,25 +2279,20 @@ window.__deck={get index(){return i;},show:show,screens:S,total:contentTotal,not
     });
   }
 
-  function paintChips(host, counts, total) {
-    // s03: the chip the room was asked to press becomes the result, in place. No new height,
-    // no second component, and the offline behaviour of the chip is untouched.
-    if (!total) return;
-    [].forEach.call(host.querySelectorAll('.chip'), function (chip) {
-      var v = (chip.getAttribute('onclick') || '').match(/'(YES|NO)'/);
-      if (!v) return;
-      var n = counts[v[1].toLowerCase()] || 0;
-      var fill = chip.querySelector('.cf');
-      if (!fill) {
-        fill = document.createElement('span'); fill.className = 'cf';
-        chip.insertBefore(fill, chip.firstChild);
-      }
-      fill.style.width = Math.round(n / total * 100) + '%';
-      var num = chip.querySelector('.cn');
-      if (!num) { num = document.createElement('span'); num.className = 'cn'; chip.appendChild(num); }
-      num.textContent = n;
-    });
-  }
+  /* paintChips() WAS HERE AND IS DELETED — T29, 2026-08-18.
+     It painted the room's Yes/No tally into s03's chips. Session 10 deleted those chips on
+     purpose (the slide source records it: "THE CHIPS ARE GONE, DELIBERATELY" — the room answers on their own
+     phones now, and two places to answer meant no way to know which one counted), and this
+     painter was left behind. `.chips[data-poll]` has occurred ZERO times in every build since,
+     so tick() looked it up, found nothing, and called nothing, silently, on every 4s poll.
+
+     DELETED rather than re-targeted, which was the other option. The question it displayed
+     (`data-check`) already has TWO working displays — the `.rm` strip on s03 and the s29
+     pulse-echo — so re-targeting would put a third view of one answer on the slide that has
+     3-15px of vertical slack. A repair that adds height to s03 is not available.
+
+     The sweep that found it is now a verifier assertion, keyed to the BUILT decks rather than
+     the offline one, so no painter can outlive its host unnoticed again. */
 
   /* s29's closing line stops being an assertion the presenter seeded by tapping a chip and
      becomes what the room actually said. The SHAPE, never the count — the script's own
@@ -2414,8 +2416,6 @@ window.__deck={get index(){return i;},show:show,screens:S,total:contentTotal,not
         [].forEach.call(document.querySelectorAll('.rm[data-poll="' + poll.id + '"]'), function (el) {
           paintStrip(el, poll, counts, total);
         });
-        var chipHost = document.querySelector('.chips[data-poll="' + poll.id + '"]');
-        if (chipHost) paintChips(chipHost, counts, total);
         [].forEach.call(document.querySelectorAll('.logos[data-poll="' + poll.id + '"]'),
           function (lh) { paintLogos(lh, poll, counts, total); });
         if (poll.id === 'data-check') paintEcho(counts, total);
